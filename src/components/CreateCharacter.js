@@ -64,7 +64,10 @@ export default function CreateCharacter({ onCreated }) {
 
         const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(filePath, formData.avatar);
+          .upload(filePath, formData.avatar, {
+            upsert: false,
+            contentType: formData.avatar.type,
+          });
 
         if (uploadError) throw uploadError;
 
