@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { supabase } from "@/src/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph").then(mod => mod.ForceGraph2D), {
   ssr: false,
