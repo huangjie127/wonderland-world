@@ -1,33 +1,41 @@
 "use client";
-import { useState, useEffect } from "react";
-import AddRelation from "@/components/AddRelation";
-import { supabase } from "@/lib/supabaseClient";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { supabase } from "@/src/lib/supabaseClient";
+
+const ForceGraph2D = dynamic(() => import("react-force-graph").then(mod => mod.ForceGraph2D), {
+  ssr: false,
+});
 
 export default function RelationsPage() {
-  const [characterId, setCharacterId] = useState(1);
-  const [allCharacters, setAllCharacters] = useState([]);
-  
+  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+
   useEffect(() => {
-    const fetchCharacters = async () => {
-      const { data } = await supabase.from("characters").select("*");
-      setAllCharacters(data || []);
+    const fetchRelations = async () => {
+      const { data: nodes } = await supabase.from("characters").select("*");
+      const { data: links } = await supabase.from("relations").select("*");
+
+      setGraphData({
+        nodes: nodes.map(n => ({ id: n.id, name: n.name })),
+        links: links.map(l => ({
+          source: l.source_id,
+          target: l.target_id,
+        })),
+      });
     };
-    fetchCharacters();
+
+    fetchRelations();
   }, []);
-  
+
   return (
-    <div className="p-6">
-      <h1 className="text-xl mb-4">关系档案</h1>
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">选择角色 ID</label>
-        <input
-          type="number"
-          value={characterId}
-          onChange={(e) => setCharacterId(Number(e.target.value))}
-          className="border rounded px-2 py-1 w-40"
-        />
-      </div>
-      <AddRelation characterId={characterId} allCharacters={allCharacters} />
+    <div style={{ height: "80vh", background: "#fafafa" }}>
+      <ForceGraph2D
+        graphData={graphData}
+        nodeLabel="name"
+        nodeAutoColorBy="id"
+        linkColor={() => "rgba(0,0,0,0.4)"}
+      />
     </div>
   );
 }
