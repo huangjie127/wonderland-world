@@ -6,9 +6,33 @@ import AddRelation from "@/components/AddRelation";
 import AddComment from "@/components/AddComment";
 import LikeButton from "@/components/LikeButton";
 
+export async function generateStaticParams() {
+  try {
+    const { data: characters } = await supabase
+      .from("characters")
+      .select("id")
+      .limit(100);
+    
+    return (characters || []).map((character) => ({
+      id: String(character.id),
+    }));
+  } catch (error) {
+    console.error("Error generating static params:", error);
+    return [];
+  }
+}
+
 export default async function CharacterDetail({ params }) {
   const id = Number(params.id);
   const { data: character } = await supabase.from("characters").select("*").eq("id", id).single();
+
+  if (!character) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-2xl font-bold">角色不存在</h1>
+      </div>
+    );
+  }
 
   // fetch events, albums, relations, comments, likes count, and all characters for relations dropdown
   const [{ data: events }, { data: albums }, { data: relations }, { data: comments }, { data: likes }, { data: allChars }] = await Promise.all([
