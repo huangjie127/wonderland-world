@@ -1,18 +1,44 @@
-// app/archive/page.js
-import { supabase } from "@/lib/supabaseClient";
-import CharacterCard from "@/components/CharacterCard";
+"use client";
 
-export default async function ArchivePage() {
-  const { data: characters } = await supabase.from("characters").select("*").order("created_at", { ascending: false });
+import { useEffect, useState } from "react";
+import { supabase } from "@/src/lib/supabaseClient";
+import "./archive.css";
+
+export default function ArchivePage() {
+  const [characters, setCharacters] = useState([]);
+  const [hoveredId, setHoveredId] = useState(null);
+
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      const { data } = await supabase
+        .from("characters")
+        .select("*, photos(*), events(*)")
+        .order("created_at", { ascending: true });
+      setCharacters(data);
+    };
+    fetchCharacters();
+  }, []);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">档案馆</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {characters?.map(c => (
-          <CharacterCard key={c.id} character={c} />
-        ))}
-      </div>
+    <div className="archive-container">
+      {characters.map((char) => (
+        <div
+          key={char.id}
+          className="archive-card"
+          onMouseEnter={() => setHoveredId(char.id)}
+          onMouseLeave={() => setHoveredId(null)}
+        >
+          <img src={char.avatar_url} alt={char.name} className="archive-avatar" />
+          <p className="archive-name">{char.name}</p>
+
+          {hoveredId === char.id && (
+            <div className="archive-hover">
+              <p>相册: {char.photos?.length || 0}</p>
+              <p>事件: {char.events?.length || 0}</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
