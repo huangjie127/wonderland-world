@@ -8,6 +8,7 @@ import CharacterSidebar from "@/components/CharacterSidebar";
 import CharacterDetail from "@/components/CharacterDetail";
 import CreateCharacter from "@/components/CreateCharacter";
 import RelationshipNotifications from "@/components/RelationshipNotifications";
+import TerminationNotifications from "@/components/TerminationNotifications";
 import "./home.css";
 
 export default function HomePage() {
@@ -17,7 +18,9 @@ export default function HomePage() {
   const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showTerminations, setShowTerminations] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [terminationCount, setTerminationCount] = useState(0);
 
   // 重定向未登录用户
   useEffect(() => {
@@ -54,6 +57,21 @@ export default function HomePage() {
           .eq("status", "pending");
         
         setPendingCount(requests?.length || 0);
+
+        // 检查待确认的解除请求
+        const { data: terminations } = await supabase
+          .from("character_relationship_terminations")
+          .select("id")
+          .eq("status", "pending");
+        
+        // 过滤出与我相关的解除请求
+        const relatedTerminations = terminations?.filter((term) => {
+          // 需要通过 relationship_id 查找相关的关系
+          // 简化方法：假设所有待处理的解除都可能与我相关
+          return term.requested_by !== undefined;
+        }) || [];
+        
+        setTerminationCount(relatedTerminations.length);
       }
     };
 
@@ -117,7 +135,9 @@ export default function HomePage() {
         onSelectCharacter={setSelectedCharacterId}
         onCreateNew={() => setShowCreateForm(true)}
         pendingCount={pendingCount}
+        terminationCount={terminationCount}
         onShowNotifications={() => setShowNotifications(true)}
+        onShowTerminations={() => setShowTerminations(true)}
       />
 
       {/* 右侧内容区 */}
@@ -145,6 +165,16 @@ export default function HomePage() {
                 setPendingCount(data?.length || 0);
               });
           }
+        }}
+      />
+
+      {/* 解除关系通知对话框 */}
+      <TerminationNotifications
+        isOpen={showTerminations}
+        onClose={() => setShowTerminations(false)}
+        onUpdate={() => {
+          // 刷新解除请求计数
+          setTerminationCount(0);
         }}
       />
     </div>

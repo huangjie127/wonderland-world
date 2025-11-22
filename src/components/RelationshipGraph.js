@@ -13,6 +13,7 @@ export default function RelationshipGraph({ characterId, characterName, characte
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [tooltipData, setTooltipData] = useState(null);
+  const [userCharacters, setUserCharacters] = useState([]);
   const nodesRef = useRef([]);
   const linksRef = useRef([]);
   const animationRef = useRef(null);
@@ -66,6 +67,28 @@ export default function RelationshipGraph({ characterId, characterName, characte
     } catch (err) {
       console.error("Error fetching relationships:", err);
       setLoading(false);
+    }
+  };
+
+  const handleRequestTermination = async (relationshipId, otherCharacterId) => {
+    if (!confirm("确定要解除这段关系吗？对方需要同意才能完成解除。")) return;
+
+    try {
+      const { error } = await supabase
+        .from("character_relationship_terminations")
+        .insert([
+          {
+            relationship_id: relationshipId,
+            requested_by: characterId,
+          },
+        ]);
+
+      if (error) throw error;
+
+      alert("解除请求已发送！");
+    } catch (err) {
+      alert("发送失败：" + err.message);
+      console.error("Termination error:", err);
     }
   };
 
@@ -442,7 +465,7 @@ export default function RelationshipGraph({ characterId, characterName, characte
               return (
                 <div
                   key={rel.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                 >
                   <span className="text-2xl">🔗</span>
                   <div className="flex-1">
@@ -457,6 +480,12 @@ export default function RelationshipGraph({ characterId, characterName, characte
                         : `${otherChar.name}是你的${rel.from_role}`}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleRequestTermination(rel.id, otherCharId)}
+                    className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-semibold flex-shrink-0"
+                  >
+                    解除
+                  </button>
                 </div>
               );
             })}

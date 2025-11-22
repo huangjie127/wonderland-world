@@ -7,8 +7,10 @@ export default function CharacterSidebar({
   selectedCharacterId,
   onSelectCharacter,
   onCreateNew,
-  pendingCount,
+  pendingCount = 0,
+  terminationCount = 0,
   onShowNotifications,
+  onShowTerminations,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -27,13 +29,23 @@ export default function CharacterSidebar({
           + 创建新角色
         </button>
 
-        {/* 通知按钮 */}
+        {/* 关系请求通知按钮 */}
         {pendingCount > 0 && onShowNotifications && (
           <button
             onClick={onShowNotifications}
             className="w-full relative bg-amber-100 text-amber-800 py-2 rounded-lg hover:bg-amber-200 font-semibold text-sm transition flex items-center justify-center gap-2"
           >
             🔔 收到 {pendingCount} 个关系请求
+          </button>
+        )}
+
+        {/* 解除关系请求通知按钮 */}
+        {terminationCount > 0 && onShowTerminations && (
+          <button
+            onClick={onShowTerminations}
+            className="w-full relative bg-red-100 text-red-800 py-2 rounded-lg hover:bg-red-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+          >
+            🔓 收到 {terminationCount} 个解除请求
           </button>
         )}
       </div>
