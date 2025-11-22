@@ -125,6 +125,7 @@ export default function HomePage() {
         character={selectedCharacter} 
         onCharacterUpdated={handleCharacterUpdated}
         onCharacterDeleted={handleCharacterDeleted}
+        onCharacterSelect={setSelectedCharacterId}
       />
 
       {/* 关系通知对话框 */}

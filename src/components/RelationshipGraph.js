@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function RelationshipGraph({ characterId, characterName, characterAvatar }) {
+export default function RelationshipGraph({ characterId, characterName, characterAvatar, onCharacterSelect }) {
+  const router = useRouter();
   const canvasRef = useRef(null);
   const [relationships, setRelationships] = useState([]);
   const [relatedCharacters, setRelatedCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [tooltipData, setTooltipData] = useState(null);
   const nodesRef = useRef([]);
   const linksRef = useRef([]);
   const animationRef = useRef(null);
@@ -72,7 +77,79 @@ export default function RelationshipGraph({ characterId, characterName, characte
     initializeGraph();
     animate();
 
+    // 添加鼠标事件监听
+    const canvas = canvasRef.current;
+    const handleMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // 检查是否悬浮在某个节点上
+      let hoveredId = null;
+      let tooltipInfo = null;
+
+      nodesRef.current.forEach((node) => {
+        const size = node.isCenter ? 40 : 30;
+        const dist = Math.sqrt(
+          Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2)
+        );
+
+        if (dist < size + 5) {
+          // 5px 边距
+          hoveredId = node.id;
+
+          if (!node.isCenter) {
+            // 找到与这个角色相关的关系
+            const rel = relationships.find(
+              (r) =>
+                (r.from_character_id === characterId &&
+                  r.to_character_id === node.id) ||
+                (r.to_character_id === characterId &&
+                  r.from_character_id === node.id)
+            );
+
+            if (rel) {
+              const isInitiator = rel.from_character_id === characterId;
+              tooltipInfo = {
+                name: node.name,
+                myRole: isInitiator ? rel.from_role : rel.to_role,
+                theirRole: isInitiator ? rel.to_role : rel.from_role,
+                characterId: node.id,
+              };
+            }
+          }
+        }
+      });
+
+      setHoveredNodeId(hoveredId);
+      if (tooltipInfo) {
+        setTooltipPos({ x, y });
+        setTooltipData(tooltipInfo);
+      } else {
+        setTooltipData(null);
+      }
+    };
+
+    const handleCanvasClick = (e) => {
+      if (!hoveredNodeId || hoveredNodeId === characterId) return;
+
+      // 如果提供了回调，调用它来选择这个角色
+      if (onCharacterSelect) {
+        onCharacterSelect(hoveredNodeId);
+      }
+    };
+
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("click", handleCanvasClick);
+    canvas.addEventListener("mouseleave", () => {
+      setHoveredNodeId(null);
+      setTooltipData(null);
+    });
+
     return () => {
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("click", handleCanvasClick);
+      canvas.removeEventListener("mouseleave", () => {});
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -197,12 +274,22 @@ export default function RelationshipGraph({ characterId, characterName, characte
     // 绘制节点
     nodesRef.current.forEach((node) => {
       const size = node.isCenter ? 40 : 30;
+      const isHovered = hoveredNodeId === node.id;
 
       // 绘制圆形背景
-      ctx.fillStyle = node.isCenter ? "#4f46e5" : "#818cf8";
+      ctx.fillStyle = node.isCenter ? "#4f46e5" : isHovered ? "#a78bfa" : "#818cf8";
       ctx.beginPath();
       ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
       ctx.fill();
+
+      // 如果悬浮，绘制光晕效果
+      if (isHovered && !node.isCenter) {
+        ctx.strokeStyle = "rgba(167, 139, 250, 0.5)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, size + 8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
       // 尝试绘制头像
       const img = imagesRef.current[node.id];
@@ -301,12 +388,39 @@ export default function RelationshipGraph({ characterId, characterName, characte
       <h2 className="text-xl font-bold mb-4">关系图谱</h2>
       
       {relationships.length > 0 ? (
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={400}
-          className="w-full border border-gray-200 rounded-lg bg-white"
-        />
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={400}
+            className={`w-full border border-gray-200 rounded-lg bg-white ${
+              hoveredNodeId ? "cursor-pointer" : "cursor-default"
+            }`}
+            style={{
+              cursor: hoveredNodeId ? "pointer" : "default",
+            }}
+          />
+
+          {/* 悬浮提示 */}
+          {tooltipData && tooltipPos && (
+            <div
+              className="absolute bg-gray-800 text-white px-3 py-2 rounded-lg text-sm shadow-lg z-10 pointer-events-none whitespace-nowrap"
+              style={{
+                left: `${tooltipPos.x + 10}px`,
+                top: `${tooltipPos.y - 40}px`,
+              }}
+            >
+              <p className="font-semibold">{tooltipData.name}</p>
+              <p className="text-xs text-gray-300">
+                你是对方的<span className="font-semibold text-amber-300">{tooltipData.myRole}</span>
+              </p>
+              <p className="text-xs text-gray-300">
+                对方是你的<span className="font-semibold text-amber-300">{tooltipData.theirRole}</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-1">点击查看详情</p>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="h-96 flex items-center justify-center bg-gray-50 rounded-lg">
           <p className="text-gray-500">暂无建立的关系</p>

@@ -7,7 +7,7 @@ import { useAuth } from "@/app/providers";
 import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
 
-export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted }) {
+export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [albums, setAlbums] = useState([]);
@@ -529,6 +529,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             characterId={character.id}
             characterName={character.name}
             characterAvatar={character.avatar_url}
+            onCharacterSelect={onCharacterSelect}
           />
         </div>
       </div>
