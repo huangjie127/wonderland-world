@@ -25,6 +25,30 @@ export default function MeetLobby() {
     characterIdRef.current = characterId;
   }, [characterId]);
 
+  // 轮询机制：作为 Realtime 的备份，防止消息丢失
+  useEffect(() => {
+    let intervalId;
+    if (status === 'searching' && characterId) {
+      intervalId = setInterval(async () => {
+        // 检查我是否已经被分配到了房间
+        const { data, error } = await supabase
+          .from('meet_participants')
+          .select('room_id')
+          .eq('character_id', characterId)
+          .maybeSingle();
+
+        if (data && data.room_id) {
+          console.log("Polling found match:", data.room_id);
+          clearInterval(intervalId);
+          router.push(`/meet/room/${data.room_id}`);
+        }
+      }, 2000); // 每2秒检查一次
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [status, characterId, router]);
+
   useEffect(() => {
     // 1. 获取当前角色
     const loadCharacter = async () => {
