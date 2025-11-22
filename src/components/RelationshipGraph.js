@@ -343,46 +343,108 @@ export default function RelationshipGraph({ characterId, characterName, characte
   };
 
   const simulateForces = () => {
-    const repulsion = 1000;
-    const attraction = 0.1;
-    const damping = 0.9;
+    const repulsion = 5000; // 增加斥力
+    const springLength = 200; // 目标连线长度
+    const springStrength = 0.05; // 弹簧强度
+    const damping = 0.8; // 增加阻尼，减少震荡
+    const centerForce = 0.01; // 向心力，防止飞太远
+
     const centerX = canvasRef.current.width / 2;
     const centerY = canvasRef.current.height / 2;
 
-    // 计算斥力
+    // 1. 计算节点间的斥力 (Coulomb's Law)
     nodesRef.current.forEach((node, i) => {
-      if (node.fixed) return;
+      // 向心力：让所有节点有轻微的回到中心的趋势
+      if (!node.fixed) {
+        node.vx += (centerX - node.x) * centerForce;
+        node.vy += (centerY - node.y) * centerForce;
+      }
 
       for (let j = i + 1; j < nodesRef.current.length; j++) {
         const other = nodesRef.current[j];
         const dx = node.x - other.x;
         const dy = node.y - other.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        
+        // 斥力公式
         const force = repulsion / (dist * dist);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
 
-        node.vx += (dx / dist) * force;
-        node.vy += (dy / dist) * force;
-        other.vx -= (dx / dist) * force;
-        other.vy -= (dy / dist) * force;
+        if (!node.fixed) {
+          node.vx += fx;
+          node.vy += fy;
+        }
+        if (!other.fixed) {
+          other.vx -= fx;
+          other.vy -= fy;
+        }
       }
     });
 
-    // 计算引力
+    // 2. 计算连线的弹簧力 (Hooke's Law)
     linksRef.current.forEach((link) => {
       const source = nodesRef.current[link.source];
       const target = nodesRef.current[link.target];
       const dx = target.x - source.x;
       const dy = target.y - source.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const force = dist * attraction;
+      
+      // 弹簧力：拉向目标长度
+      // 如果距离 > 目标长度，拉近；如果距离 < 目标长度，推远
+      const force = (dist - springLength) * springStrength;
+      const fx = (dx / dist) * force;
+      const fy = (dy / dist) * force;
 
-      source.vx += (dx / dist) * force;
-      source.vy += (dy / dist) * force;
-      target.vx -= (dx / dist) * force;
-      target.vy -= (dy / dist) * force;
+      if (!source.fixed) {
+        source.vx += fx;
+        source.vy += fy;
+      }
+      if (!target.fixed) {
+        target.vx -= fx;
+        target.vy -= fy;
+      }
     });
 
-    // 更新位置
+    // 3. 碰撞检测 (防止重叠)
+    nodesRef.current.forEach((node, i) => {
+      for (let j = i + 1; j < nodesRef.current.length; j++) {
+        const other = nodesRef.current[j];
+        const dx = node.x - other.x;
+        const dy = node.y - other.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        
+        const r1 = node.isCenter ? 45 : 35; // 稍微加大一点碰撞半径
+        const r2 = other.isCenter ? 45 : 35;
+        const minDist = r1 + r2 + 10; // 最小距离 = 半径和 + 间隙
+
+        if (dist < minDist) {
+          // 如果重叠了，强制分开
+          const angle = Math.atan2(dy, dx);
+          const tx = Math.cos(angle) * minDist;
+          const ty = Math.sin(angle) * minDist;
+          
+          const ax = (tx - dx) * 0.1; // 缓动系数
+          const ay = (ty - dy) * 0.1;
+          
+          if (!node.fixed) {
+            node.x += ax;
+            node.y += ay;
+            // 碰撞时损失速度
+            node.vx *= 0.5;
+            node.vy *= 0.5;
+          }
+          if (!other.fixed) {
+            other.x -= ax;
+            other.y -= ay;
+            other.vx *= 0.5;
+            other.vy *= 0.5;
+          }
+        }
+      }
+    });
+
+    // 4. 更新位置
     nodesRef.current.forEach((node) => {
       if (node.fixed) return;
 
@@ -391,10 +453,11 @@ export default function RelationshipGraph({ characterId, characterName, characte
       node.x += node.vx;
       node.y += node.vy;
 
-      // 边界碰撞检测
+      // 边界限制
       const size = node.isCenter ? 40 : 30;
-      node.x = Math.max(size, Math.min(canvasRef.current.width - size, node.x));
-      node.y = Math.max(size, Math.min(canvasRef.current.height - size, node.y));
+      const padding = size + 10;
+      node.x = Math.max(padding, Math.min(canvasRef.current.width - padding, node.x));
+      node.y = Math.max(padding, Math.min(canvasRef.current.height - padding, node.y));
     });
   };
 
