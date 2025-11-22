@@ -1,0 +1,278 @@
+.meet-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: #e0e0e0;
+  font-family: 'Courier New', Courier, monospace;
+  text-align: center;
+}
+
+.meet-header {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.meet-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.meet-instructions {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 3rem;
+  text-align: left;
+  line-height: 1.6;
+  border: 1px solid #444;
+}
+
+.meet-instructions h3 {
+  margin-top: 0;
+  color: #fff;
+  border-bottom: 1px solid #555;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.meet-action-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.meet-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 1.5rem 4rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.meet-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+.meet-btn:disabled {
+  background: #555;
+  color: #888;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.meet-status {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  color: #aaa;
+  min-height: 2rem;
+}
+
+.status-searching {
+  color: #4caf50;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.character-selector-warning {
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+}
+
+/* Room Styles */
+.meet-room-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #111;
+  color: #eee;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.scene-header {
+  padding: 1rem 2rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+.scene-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: #aaa;
+}
+
+.scene-header p {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.participants-list {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.participant-badge {
+  background: #333;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.room-split-view {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+}
+
+.panel:last-child {
+  border-right: none;
+}
+
+.panel-header {
+  padding: 0.8rem;
+  background: #222;
+  border-bottom: 1px solid #333;
+  font-weight: bold;
+  text-align: center;
+}
+
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-area {
+  padding: 1rem;
+  background: #1a1a1a;
+  border-top: 1px solid #333;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 0.8rem;
+  background: #000;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.input-area button {
+  padding: 0 1.5rem;
+  background: #fff;
+  color: #000;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Chat Specifics */
+.message-bubble {
+  display: flex;
+  gap: 10px;
+  max-width: 80%;
+}
+
+.my-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  background: #444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.msg-content {
+  background: #222;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.my-msg .msg-content {
+  background: #333;
+  border-color: #555;
+}
+
+.msg-name {
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.msg-text {
+  line-height: 1.4;
+}
+
+/* Action Specifics */
+.action-panel .messages-area {
+  background: #0a0a0a;
+}
+
+.action-item {
+  padding: 0.5rem;
+  border-left: 3px solid #666;
+  padding-left: 1rem;
+  color: #ccc;
+}
+
+.action-actor {
+  font-weight: bold;
+  color: #fff;
+  margin-right: 0.5rem;
+}
+
+.action-text {
+  font-style: italic;
+  color: #aaa;
+}
+
+.action-input {
+  font-style: italic;
+}
+
+.action-btn {
+  background: #444 !important;
+  color: #fff !important;
+}
