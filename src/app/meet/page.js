@@ -103,47 +103,62 @@ export default function MeetLobby() {
     setStatus('searching');
     isCreatingRef.current = false;
 
-    // 1. 加入队列
-    const { error } = await supabase.from('meet_queue').insert([{ character_id: characterId }]);
-    if (error) {
-      console.error("Join queue error:", error);
-      setStatus('idle');
-      return;
-    }
+    // 设置 15秒 超时提示
+    const timeoutId = setTimeout(() => {
+      if (statusRef.current === 'searching') {
+        alert("这15秒中的世界似乎只有您在探索...");
+      }
+    }, 15000);
 
-    // 2. 监听匹配状态
-    subscribeToRealtime();
-    
-    // 3. 检查当前队列情况
-    checkQueueAndMatch();
+    try {
+      // 调用数据库的原子匹配函数
+      const { data: roomId, error } = await supabase.rpc('match_player', { 
+        p_character_id: characterId 
+      });
+
+      if (error) {
+        clearTimeout(timeoutId); // 出错清除定时器
+        console.error("Match error:", error);
+        setStatus('idle');
+        alert("匹配服务暂时不可用");
+        return;
+      }
+
+      // 情况 A: 函数直接返回了房间号
+      if (roomId) {
+        clearTimeout(timeoutId); // 成功清除定时器
+        console.log("Direct match!", roomId);
+        router.push(`/meet/room/${roomId}`);
+        return;
+      }
+
+      // 情况 B: 返回 NULL，说明我进入了队列
+      console.log("Queued, waiting for others...");
+      subscribeToRealtime(timeoutId); // 传递定时器ID以便在回调中清理(虽然回调里很难清理，但跳转会卸载组件)
+
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error("System error:", err);
+      setStatus('idle');
+    }
   };
 
-  const subscribeToRealtime = () => {
+  const subscribeToRealtime = (timeoutId) => {
     // 清理旧的
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
 
-    // 使用唯一频道名，避免冲突
-    const channelName = `meet-room-${characterId}-${Date.now()}`;
-    const channel = supabase.channel(channelName);
-
-    channel
-      // 监听 meet_participants 表，看自己是否被加入房间
+    // 监听 meet_participants 表
+    const channel = supabase
+      .channel(`meet-wait-${characterId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'meet_participants', filter: `character_id=eq.${characterId}` },
         (payload) => {
-          console.log("Matched via Realtime!", payload);
+          console.log("System pulled me into room!", payload);
+          if (timeoutId) clearTimeout(timeoutId); // 尝试清理
           router.push(`/meet/room/${payload.new.room_id}`);
-        }
-      )
-      // 监听 meet_queue 表，更新人数，或者触发匹配
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'meet_queue' },
-        () => {
-          checkQueueAndMatch();
         }
       )
       .subscribe();
@@ -151,104 +166,11 @@ export default function MeetLobby() {
     channelRef.current = channel;
   };
 
-  const checkQueueAndMatch = async () => {
-    // 如果正在创建中，不要重复执行
-    if (isCreatingRef.current) return;
-
-    const currentId = characterIdRef.current;
-    if (!currentId) return;
-
-    // 0. 兜底检查：如果我正在搜索，但我不在队列里了，可能是我被匹配了（但没收到 Realtime 事件）
-    // 或者我被踢了。检查一下 meet_participants
-    if (statusRef.current === 'searching' || statusRef.current === 'waiting_for_match') {
-       const { data: participation } = await supabase
-         .from('meet_participants')
-         .select('room_id, joined_at')
-         .eq('character_id', currentId)
-         .order('joined_at', { ascending: false })
-         .limit(1)
-         .single();
-       
-       // 如果发现最近 1 分钟内加入的房间，直接跳转
-       if (participation) {
-          const joinTime = new Date(participation.joined_at).getTime();
-          if (Date.now() - joinTime < 60000) {
-             console.log("Found room via polling/fallback:", participation);
-             router.push(`/meet/room/${participation.room_id}`);
-             return;
-          }
-       }
-    }
-
-    // 获取当前队列
-    const { data: queue, error } = await supabase
-      .from('meet_queue')
-      .select('character_id, joined_at, characters(name)')
-      .order('joined_at', { ascending: true });
-
-    if (error || !queue) return;
-
-    setQueueCount(queue.length);
-
-    // 匹配逻辑：如果人数 >= 2，且我是队列中最后一个人（避免并发创建），则由我来创建房间
-    
-    const myIndex = queue.findIndex(q => q.character_id == currentId);
-    const isMeInQueue = myIndex !== -1;
-    
-    if (queue.length >= 2 && isMeInQueue) {
-      // 简单的防冲突：只有我是队列的最后一个（最新）时，我才执行创建
-      const isLast = myIndex === queue.length - 1;
-      
-      if (isLast) {
-        isCreatingRef.current = true; // 锁定
-        setStatus('creating');
-        await createRoom(queue);
-      } else {
-        setStatus('waiting_for_match'); // 等待别人创建
-      }
-    }
-  };
-
-  const createRoom = async (queue) => {
-    try {
-      // 1. 生成场景
-      const names = queue.map(q => q.characters?.name || '未知角色').join('、');
-      const scene = generateScene(names);
-
-      // 2. 创建房间
-      const { data: room, error: roomError } = await supabase
-        .from('meet_rooms')
-        .insert([{ scene_description: scene }])
-        .select()
-        .single();
-
-      if (roomError) throw roomError;
-
-      // 3. 添加参与者
-      const participants = queue.map(q => ({
-        room_id: room.id,
-        character_id: q.character_id
-      }));
-
-      const { error: partError } = await supabase.from('meet_participants').insert(participants);
-      if (partError) throw partError;
-
-      // 4. 清空队列 (删除这些已匹配的人)
-      const idsToRemove = queue.map(q => q.character_id);
-      await supabase.from('meet_queue').delete().in('character_id', idsToRemove);
-
-      // 5. 跳转 (监听器会处理，但为了快也可以直接跳)
-      router.push(`/meet/room/${room.id}`);
-    } catch (err) {
-      console.error("Create room failed:", err);
-      setStatus('searching'); // 回退状态
-      isCreatingRef.current = false; // 解锁
-      alert("创建房间失败，请重试");
-    }
-  };
+  // 移除旧的 checkQueueAndMatch 和 createRoom 函数，因为逻辑已经移交给了数据库
+  // 仅保留必要的辅助函数
 
   const handleExit = async () => {
-    if (status === 'creating') return; // 创建中不允许退出，防止数据不一致
+    if (status === 'creating') return; 
     
     await leaveQueue();
     setStatus('idle');

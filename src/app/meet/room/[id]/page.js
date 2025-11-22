@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { useParams, useRouter } from 'next/navigation';
-import '../../meet.css'; // Reuse basic styles
+import Link from 'next/link';
 
 export default function MeetRoom() {
   const { id: roomId } = useParams();
@@ -87,6 +86,7 @@ export default function MeetRoom() {
     if (!content.trim() || !myCharacter) return;
 
     // 1. 发送到房间 (显示用)
+    // 注意：我们不再手动写入 character_events，而是依赖数据库触发器自动归档
     const { error } = await supabase.from('meet_messages').insert([{
       room_id: roomId,
       character_id: myCharacter.id,
@@ -98,19 +98,6 @@ export default function MeetRoom() {
       console.error("Send error:", error);
       return;
     }
-
-    // 2. 写入个人事件 (存档用)
-    // 格式：在 Meet 房间：对露娜说“你好” / 执行行动“环顾四周”
-    // 这里简单记录内容，或者根据需求格式化
-    const eventContent = type === 'chat' 
-      ? `在 Meet 房间：说 "${content}"`
-      : `在 Meet 房间：执行行动 "${content}"`;
-
-    await supabase.from('character_events').insert([{
-      character_id: myCharacter.id,
-      type: 'MEET_' + type.toUpperCase(),
-      content: eventContent
-    }]);
 
     // 清空输入
     if (type === 'chat') setChatInput('');
@@ -127,12 +114,6 @@ export default function MeetRoom() {
       <div className="scene-header">
         <h2>📜 场景描述</h2>
         <p>{scene || "加载场景中..."}</p>
-        <div className="participants-list">
-          <small>当前角色：</small>
-          {participants.map(p => (
-            <span key={p.id} className="participant-badge">{p.name}</span>
-          ))}
-        </div>
       </div>
 
       {/* 主体分栏 */}
@@ -141,6 +122,22 @@ export default function MeetRoom() {
         {/* 左栏：聊天 */}
         <div className="panel chat-panel">
           <div className="panel-header">💬 对话 (Chat)</div>
+          
+          {/* 角色列表 (新增) */}
+          <div className="room-avatars">
+            {participants.map(p => (
+              <Link key={p.id} href={`/archive/${p.id}`} className="room-avatar-link" title={p.name}>
+                <div className="room-avatar-circle">
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt={p.name} />
+                  ) : (
+                    <span>{p.name[0]}</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+
           <div className="messages-area">
             {chatMessages.map(msg => (
               <div key={msg.id} className={`message-bubble ${msg.character_id == myCharacter?.id ? 'my-msg' : 'other-msg'}`}>
