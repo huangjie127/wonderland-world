@@ -3,48 +3,54 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
+import './room.css'; // 确保创建这个 CSS 文件
 
 export default function MeetRoom() {
   const { id: roomId } = useParams();
   const router = useRouter();
   
-  const [scene, setScene] = useState('');
+  const [room, setRoom] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [messages, setMessages] = useState([]);
   const [myCharacter, setMyCharacter] = useState(null);
   
   const [chatInput, setChatInput] = useState('');
   const [actionInput, setActionInput] = useState('');
+  const [timeLeft, setTimeLeft] = useState('');
 
   const chatEndRef = useRef(null);
-  const actionEndRef = useRef(null);
 
+  // 1. 初始化房间
   useEffect(() => {
     if (!roomId) return;
 
     const initRoom = async () => {
-      // 1. 获取房间信息
-      const { data: room } = await supabase.from('meet_rooms').select('*').eq('id', roomId).single();
-      if (room) setScene(room.scene_description);
+      // 获取房间详情
+      const { data: roomData, error } = await supabase
+        .from('meet_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
 
-      // 2. 获取参与者
-      const { data: parts } = await supabase
-        .from('meet_participants')
-        .select('character_id, characters(id, name, avatar_url)')
-        .eq('room_id', roomId);
-      
-      if (parts) {
-        setParticipants(parts.map(p => p.characters));
+      if (error || !roomData) {
+        alert("世界不存在或已坍塌");
+        router.push('/meet');
+        return;
       }
 
-      // 3. 确定我是谁
-      const myId = localStorage.getItem('activeCharacterId');
-      if (myId && parts) {
-        const me = parts.find(p => p.characters.id == myId);
-        if (me) setMyCharacter(me.characters);
+      // 检查是否坍塌
+      if (new Date(roomData.collapse_at) < new Date() || roomData.status === 'collapsed') {
+        alert("这个世界已经坍塌了...");
+        router.push('/meet');
+        return;
       }
 
-      // 4. 获取历史消息
+      setRoom(roomData);
+
+      // 获取参与者
+      fetchParticipants();
+
+      // 获取历史消息
       const { data: msgs } = await supabase
         .from('meet_messages')
         .select('*, characters(name, avatar_url)')
@@ -52,108 +58,155 @@ export default function MeetRoom() {
         .order('created_at', { ascending: true });
       
       if (msgs) setMessages(msgs);
+
+      // 确定我是谁
+      const myId = localStorage.getItem('activeCharacterId');
+      if (myId) {
+        const { data: me } = await supabase.from('characters').select('*').eq('id', myId).single();
+        setMyCharacter(me);
+      }
     };
 
     initRoom();
 
-    // 5. 实时订阅消息
+    // 2. 实时订阅
     const channel = supabase
       .channel(`room-${roomId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'meet_messages', filter: `room_id=eq.${roomId}` },
+      // 监听新消息
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meet_messages', filter: `room_id=eq.${roomId}` }, 
         async (payload) => {
-          // 需要补全用户信息
           const { data: char } = await supabase.from('characters').select('name, avatar_url').eq('id', payload.new.character_id).single();
-          const newMsg = { ...payload.new, characters: char };
-          setMessages(prev => [...prev, newMsg]);
+          setMessages(prev => [...prev, { ...payload.new, characters: char }]);
         }
+      )
+      // 监听参与者变化
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meet_participants', filter: `room_id=eq.${roomId}` }, 
+        () => fetchParticipants()
       )
       .subscribe();
 
+    // 3. 倒计时计时器
+    const timer = setInterval(() => {
+      if (room) {
+        const diff = new Date(room.collapse_at) - new Date();
+        if (diff <= 0) {
+          alert("🌍 世界坍塌了。\n你被抛出了这个时空。");
+          router.push('/meet');
+        } else {
+          const h = Math.floor(diff / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+          setTimeLeft(`${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        }
+      }
+    }, 1000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(timer);
     };
-  }, [roomId]);
+  }, [roomId, room?.collapse_at]); // 依赖 room.collapse_at 确保计时器准确
+
+  const fetchParticipants = async () => {
+    const { data } = await supabase
+      .from('meet_participants')
+      .select('character_id, characters(id, name, avatar_url)')
+      .eq('room_id', roomId);
+    
+    if (data) {
+      setParticipants(data.map(p => p.characters));
+    }
+  };
 
   // 自动滚动
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    actionEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async (type) => {
     const content = type === 'chat' ? chatInput : actionInput;
     if (!content.trim() || !myCharacter) return;
 
-    // 1. 发送到房间 (显示用)
-    // 注意：我们不再手动写入 character_events，而是依赖数据库触发器自动归档
-    const { error } = await supabase.from('meet_messages').insert([{
+    await supabase.from('meet_messages').insert([{
       room_id: roomId,
       character_id: myCharacter.id,
       type,
       content
     }]);
 
-    if (error) {
-      console.error("Send error:", error);
-      return;
-    }
-
-    // 清空输入
     if (type === 'chat') setChatInput('');
     else setActionInput('');
   };
 
-  // 分离消息流
-  const chatMessages = messages.filter(m => m.type === 'chat');
-  const actionMessages = messages.filter(m => m.type === 'action');
+  const handleLeave = async () => {
+    if (confirm("确定要离开这个世界吗？")) {
+      if (myCharacter) {
+        await supabase.from('meet_participants').delete().match({ room_id: roomId, character_id: myCharacter.id });
+      }
+      router.push('/meet');
+    }
+  };
+
+  if (!room) return <div className="loading-screen">正在进入世界...</div>;
 
   return (
-    <div className="meet-room-container">
-      {/* 顶部场景 */}
-      <div className="scene-header">
-        <h2>📜 场景描述</h2>
-        <p>{scene || "加载场景中..."}</p>
-      </div>
-
-      {/* 主体分栏 */}
-      <div className="room-split-view">
-        
-        {/* 左栏：聊天 */}
-        <div className="panel chat-panel">
-          <div className="panel-header">💬 对话 (Chat)</div>
-          
-          {/* 角色列表 (新增) */}
-          <div className="room-avatars">
-            {participants.map(p => (
-              <Link key={p.id} href={`/archive/${p.id}`} className="room-avatar-link" title={p.name}>
-                <div className="room-avatar-circle">
-                  {p.avatar_url ? (
-                    <img src={p.avatar_url} alt={p.name} />
-                  ) : (
-                    <span>{p.name[0]}</span>
-                  )}
-                </div>
-              </Link>
-            ))}
+    <div className="world-room-container">
+      {/* 左栏：世界信息 */}
+      <div className="world-sidebar">
+        <div className="world-info-card">
+          <h2>{room.title}</h2>
+          <div className="collapse-timer">
+            <span>💥 坍塌倒计时</span>
+            <div className="timer-digits">{timeLeft}</div>
           </div>
+          <p className="world-desc-text">{room.scene_description}</p>
+        </div>
 
-          <div className="messages-area">
-            {chatMessages.map(msg => (
-              <div key={msg.id} className={`message-bubble ${msg.character_id == myCharacter?.id ? 'my-msg' : 'other-msg'}`}>
-                <div className="msg-avatar" title={msg.characters?.name}>
-                  {msg.characters?.name?.[0] || '?'}
+        <div className="participant-list">
+          <h3>在线冒险者 ({participants.length})</h3>
+          <div className="avatar-grid">
+            {participants.map(p => (
+              <div key={p.id} className="participant-item" title={p.name}>
+                <div className="avatar-circle">
+                  {p.avatar_url ? <img src={p.avatar_url} /> : p.name[0]}
                 </div>
-                <div className="msg-content">
-                  <div className="msg-name">{msg.characters?.name}</div>
-                  <div className="msg-text">{msg.content}</div>
-                </div>
+                <span className="participant-name">{p.name}</span>
               </div>
             ))}
-            <div ref={chatEndRef} />
           </div>
-          <div className="input-area">
+        </div>
+      </div>
+
+      {/* 中栏：互动区 */}
+      <div className="world-main-stage">
+        <div className="messages-feed">
+          {messages.map(msg => (
+            <div key={msg.id} className={`message-row ${msg.type}`}>
+              {msg.type === 'chat' ? (
+                // 聊天样式
+                <div className={`chat-bubble-container ${msg.character_id === myCharacter?.id ? 'mine' : ''}`}>
+                  <div className="msg-avatar-small">{msg.characters?.name[0]}</div>
+                  <div className="chat-bubble">
+                    <div className="msg-sender">{msg.characters?.name}</div>
+                    {msg.content}
+                  </div>
+                </div>
+              ) : (
+                // 行动样式
+                <div className="action-line">
+                  <span className="action-star">*</span>
+                  <span className="action-actor">{msg.characters?.name}</span>
+                  <span className="action-content">{msg.content}</span>
+                  <span className="action-star">*</span>
+                </div>
+              )}
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="interaction-bar">
+          <div className="input-group chat-input-group">
             <input 
               type="text" 
               placeholder="说点什么..." 
@@ -163,33 +216,30 @@ export default function MeetRoom() {
             />
             <button onClick={() => handleSend('chat')}>发送</button>
           </div>
-        </div>
-
-        {/* 右栏：行动 */}
-        <div className="panel action-panel">
-          <div className="panel-header">🎬 行动 (Action)</div>
-          <div className="messages-area">
-            {actionMessages.map(msg => (
-              <div key={msg.id} className="action-item">
-                <span className="action-actor">{msg.characters?.name}</span>
-                <span className="action-text">{msg.content}</span>
-              </div>
-            ))}
-            <div ref={actionEndRef} />
-          </div>
-          <div className="input-area">
+          <div className="input-group action-input-group">
             <input 
               type="text" 
               placeholder="描述你的行动 (如: 环顾四周...)" 
               value={actionInput}
               onChange={e => setActionInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend('action')}
-              className="action-input"
             />
-            <button onClick={() => handleSend('action')} className="action-btn">执行</button>
+            <button onClick={() => handleSend('action')}>行动</button>
           </div>
         </div>
+      </div>
 
+      {/* 右栏：我的信息 */}
+      <div className="world-user-panel">
+        {myCharacter && (
+          <div className="my-character-card">
+            <div className="my-avatar-large">
+              {myCharacter.avatar_url ? <img src={myCharacter.avatar_url} /> : myCharacter.name[0]}
+            </div>
+            <h3>{myCharacter.name}</h3>
+            <button className="leave-btn" onClick={handleLeave}>离开世界</button>
+          </div>
+        )}
       </div>
     </div>
   );
