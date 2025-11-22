@@ -11,6 +11,7 @@ export default function RelationshipGraph({ characterId, characterName, characte
   const nodesRef = useRef([]);
   const linksRef = useRef([]);
   const animationRef = useRef(null);
+  const imagesRef = useRef({});
 
   useEffect(() => {
     fetchRelationships();
@@ -21,44 +22,41 @@ export default function RelationshipGraph({ characterId, characterName, characte
       // 获取已接受的关系
       const { data } = await supabase
         .from("character_relationship_requests")
-        .select(`
-          id,
-          from_character_id,
-          to_character_id,
-          from_role,
-          to_role,
-          characters!character_relationship_requests_from_character_id_fkey (
-            id,
-            name,
-            avatar_url
-          ),
-          to_characters:characters!character_relationship_requests_to_character_id_fkey (
-            id,
-            name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("status", "accepted")
         .or(`from_character_id.eq.${characterId},to_character_id.eq.${characterId}`);
 
-      setRelationships(data || []);
+      if (!data) {
+        setRelationships([]);
+        setRelatedCharacters([]);
+        setLoading(false);
+        return;
+      }
+
+      setRelationships(data);
       
-      // 提取相关角色
+      // 获取所有相关角色的详细信息
       const relatedIds = new Set();
-      const chars = {};
-      
       (data || []).forEach((rel) => {
         if (rel.from_character_id !== characterId) {
           relatedIds.add(rel.from_character_id);
-          chars[rel.from_character_id] = rel.characters;
         }
         if (rel.to_character_id !== characterId) {
           relatedIds.add(rel.to_character_id);
-          chars[rel.to_character_id] = rel.to_characters;
         }
       });
 
-      setRelatedCharacters(Object.values(chars));
+      if (relatedIds.size > 0) {
+        const { data: charactersData } = await supabase
+          .from("characters")
+          .select("id, name, avatar_url")
+          .in("id", Array.from(relatedIds));
+
+        setRelatedCharacters(charactersData || []);
+      } else {
+        setRelatedCharacters([]);
+      }
+
       setLoading(false);
     } catch (err) {
       console.error("Error fetching relationships:", err);
@@ -69,6 +67,8 @@ export default function RelationshipGraph({ characterId, characterName, characte
   useEffect(() => {
     if (!canvasRef.current || loading) return;
 
+    // 加载所有头像
+    loadAllAvatars();
     initializeGraph();
     animate();
 
@@ -78,6 +78,24 @@ export default function RelationshipGraph({ characterId, characterName, characte
       }
     };
   }, [relationships, relatedCharacters, loading]);
+
+  const loadAllAvatars = () => {
+    // 加载中心角色头像
+    if (characterAvatar) {
+      const img = new Image();
+      img.src = characterAvatar;
+      imagesRef.current[characterId] = img;
+    }
+
+    // 加载相关角色头像
+    relatedCharacters.forEach((char) => {
+      if (char.avatar_url) {
+        const img = new Image();
+        img.src = char.avatar_url;
+        imagesRef.current[char.id] = img;
+      }
+    });
+  };
 
   const initializeGraph = () => {
     const canvas = canvasRef.current;
@@ -118,18 +136,22 @@ export default function RelationshipGraph({ characterId, characterName, characte
     ];
 
     // 创建链接
-    linksRef.current = relationships.map((rel) => ({
-      source:
-        rel.from_character_id === characterId
-          ? 0
-          : nodesRef.current.findIndex((n) => n.id === rel.from_character_id),
-      target:
-        rel.to_character_id === characterId
-          ? 0
-          : nodesRef.current.findIndex((n) => n.id === rel.to_character_id),
-      fromRole: rel.from_role,
-      toRole: rel.to_role,
-    }));
+    linksRef.current = relationships.map((rel) => {
+      const sourceIdx = rel.from_character_id === characterId 
+        ? 0 
+        : nodesRef.current.findIndex((n) => n.id === rel.from_character_id);
+      
+      const targetIdx = rel.to_character_id === characterId 
+        ? 0 
+        : nodesRef.current.findIndex((n) => n.id === rel.to_character_id);
+
+      return {
+        source: sourceIdx >= 0 ? sourceIdx : 0,
+        target: targetIdx >= 0 ? targetIdx : 0,
+        fromRole: rel.from_role,
+        toRole: rel.to_role,
+      };
+    });
   };
 
   const animate = () => {
@@ -176,26 +198,29 @@ export default function RelationshipGraph({ characterId, characterName, characte
     nodesRef.current.forEach((node) => {
       const size = node.isCenter ? 40 : 30;
 
-      if (node.avatar) {
-        // 绘制圆形头像
+      // 绘制圆形背景
+      ctx.fillStyle = node.isCenter ? "#4f46e5" : "#818cf8";
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 尝试绘制头像
+      const img = imagesRef.current[node.id];
+      if (img && img.complete && img.naturalHeight > 0) {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = "#f0f0f0";
-        ctx.fill();
+        ctx.arc(node.x, node.y, size - 2, 0, Math.PI * 2);
         ctx.clip();
-
-        // 加载头像（简化版，实际应该用 Image 对象）
-        ctx.fillStyle = "#ddd";
-        ctx.fillRect(node.x - size, node.y - size, size * 2, size * 2);
+        ctx.drawImage(img, node.x - size + 2, node.y - size + 2, size * 2 - 4, size * 2 - 4);
         ctx.restore();
-      } else {
-        // 默认圆形
-        ctx.fillStyle = node.isCenter ? "#4f46e5" : "#818cf8";
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
-        ctx.fill();
       }
+
+      // 绘制边框
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+      ctx.stroke();
 
       // 绘制名字
       ctx.fillStyle = "#1f2937";
@@ -295,7 +320,11 @@ export default function RelationshipGraph({ characterId, characterName, characte
           <div className="space-y-2">
             {relationships.map((rel) => {
               const isInitiator = rel.from_character_id === characterId;
-              const otherChar = isInitiator ? rel.to_characters : rel.characters;
+              const otherCharId = isInitiator ? rel.to_character_id : rel.from_character_id;
+              const otherChar = relatedCharacters.find((c) => c.id === otherCharId);
+              
+              if (!otherChar) return null;
+
               return (
                 <div
                   key={rel.id}
