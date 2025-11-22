@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('activeCharacterId');
     setUser(null);
   };
 

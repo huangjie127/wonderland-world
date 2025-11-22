@@ -17,24 +17,48 @@ export default function MeetLobby() {
   useEffect(() => {
     // 1. 获取当前角色
     const loadCharacter = async () => {
-      // 尝试从 localStorage 获取
-      const storedId = localStorage.getItem('activeCharacterId');
-      if (storedId) {
-        setCharacterId(storedId);
-        // 获取名字
-        const { data } = await supabase.from('characters').select('name').eq('id', storedId).single();
-        if (data) setCharacterName(data.name);
-      } else {
-        // 如果没有，尝试获取用户的第一个角色
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data } = await supabase.from('characters').select('id, name').eq('user_id', user.id).limit(1).single();
-          if (data) {
-            setCharacterId(data.id);
-            setCharacterName(data.name);
-            localStorage.setItem('activeCharacterId', data.id);
-          }
+      // 获取当前登录用户
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let targetId = localStorage.getItem('activeCharacterId');
+      let foundCharacter = null;
+
+      // 如果本地有记录，先验证该角色是否属于当前用户
+      if (targetId) {
+        const { data } = await supabase
+          .from('characters')
+          .select('id, name, user_id')
+          .eq('id', targetId)
+          .single();
+        
+        if (data && data.user_id === user.id) {
+          foundCharacter = data;
+        } else {
+          // 如果不属于当前用户（比如切换了账号），清除本地记录
+          localStorage.removeItem('activeCharacterId');
         }
+      }
+
+      // 如果没有有效的本地记录，获取用户的第一个角色
+      if (!foundCharacter) {
+        const { data } = await supabase
+          .from('characters')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+        
+        if (data) {
+          foundCharacter = data;
+          localStorage.setItem('activeCharacterId', data.id);
+        }
+      }
+
+      // 设置状态
+      if (foundCharacter) {
+        setCharacterId(foundCharacter.id);
+        setCharacterName(foundCharacter.name);
       }
     };
     loadCharacter();
