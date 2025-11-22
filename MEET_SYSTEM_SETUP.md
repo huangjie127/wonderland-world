@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS meet_queue (
   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   character_id bigint REFERENCES characters(id) ON DELETE CASCADE,
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  status TEXT DEFAULT 'waiting' -- waiting, matched
+  status TEXT DEFAULT 'waiting', -- waiting, matched
+  UNIQUE(character_id) -- 确保每个角色只能排一个队
 );
 ```
 
