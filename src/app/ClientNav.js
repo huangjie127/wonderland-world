@@ -38,6 +38,9 @@ export default function ClientNav() {
         <Link className="font-semibold" href="/archive">
           档案馆
         </Link>
+        <Link className="font-semibold" href="/meet">
+          奇遇 (Meet)
+        </Link>
       </div>
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">{user?.email}</span>
