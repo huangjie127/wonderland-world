@@ -26,28 +26,21 @@ export default function MeetLobby() {
   }, [characterId]);
 
   // 轮询机制：作为 Realtime 的备份，防止消息丢失
+  // 现在的核心逻辑已经是轮询 RPC 了，所以这个额外的轮询可以移除，或者保留作为双重保险
+  // 为了代码整洁，我们移除这个旧的轮询，因为 handleMeetNow 里的 pollMatch 已经涵盖了功能
+  /*
   useEffect(() => {
     let intervalId;
     if (status === 'searching' && characterId) {
       intervalId = setInterval(async () => {
-        // 检查我是否已经被分配到了房间
-        const { data, error } = await supabase
-          .from('meet_participants')
-          .select('room_id')
-          .eq('character_id', characterId)
-          .maybeSingle();
-
-        if (data && data.room_id) {
-          console.log("Polling found match:", data.room_id);
-          clearInterval(intervalId);
-          router.push(`/meet/room/${data.room_id}`);
-        }
-      }, 2000); // 每2秒检查一次
+        // ...
+      }, 2000); 
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [status, characterId, router]);
+  */
 
   useEffect(() => {
     // 1. 获取当前角色
@@ -127,71 +120,54 @@ export default function MeetLobby() {
     setStatus('searching');
     isCreatingRef.current = false;
 
-    // 设置 15秒 超时提示
+    // 启动轮询循环
+    const pollMatch = async () => {
+      if (statusRef.current !== 'searching') return;
+
+      try {
+        // 调用新的 create_or_join_match 函数
+        const { data, error } = await supabase.rpc('create_or_join_match', { 
+          p_character_id: parseInt(characterId) 
+        });
+
+        if (error) {
+          console.error("Match RPC error:", error);
+          // 不中断，继续重试，除非是严重错误
+          if (error.code === 'PGRST116') { // JSON转换错误等
+             // ignore
+          }
+        } else {
+          console.log("Match status:", data);
+          
+          if (data.status === 'matched' && data.room_id) {
+            setStatus('idle');
+            router.push(`/meet/room/${data.room_id}`);
+            return; // 结束轮询
+          }
+          
+          // 如果是 waiting，什么都不做，继续下一次轮询
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+
+      // 1.5秒后再次轮询
+      setTimeout(pollMatch, 1500);
+    };
+
+    // 立即开始第一次
+    pollMatch();
+
+    // 设置 30秒 超时提示 (可选)
     const timeoutId = setTimeout(() => {
       if (statusRef.current === 'searching') {
-        alert("这15秒中的世界似乎只有您在探索...");
+        // alert("匹配时间较长，请耐心等待...");
       }
-    }, 15000);
-
-    try {
-      // 调用数据库的原子匹配函数
-      const { data: roomId, error } = await supabase.rpc('match_player', { 
-        p_character_id: parseInt(characterId) // 确保转换为整数
-      });
-
-      if (error) {
-        clearTimeout(timeoutId); // 出错清除定时器
-        console.error("Match error details:", error); // 打印详细错误
-        setStatus('idle');
-        alert(`匹配服务暂时不可用: ${error.message || error.code}`);
-        return;
-      }
-
-      // 情况 A: 函数直接返回了房间号
-      if (roomId) {
-        clearTimeout(timeoutId); // 成功清除定时器
-        console.log("Direct match!", roomId);
-        router.push(`/meet/room/${roomId}`);
-        return;
-      }
-
-      // 情况 B: 返回 NULL，说明我进入了队列
-      console.log("Queued, waiting for others...");
-      subscribeToRealtime(timeoutId); // 传递定时器ID以便在回调中清理(虽然回调里很难清理，但跳转会卸载组件)
-
-    } catch (err) {
-      clearTimeout(timeoutId);
-      console.error("System error:", err);
-      setStatus('idle');
-    }
+    }, 30000);
   };
 
-  const subscribeToRealtime = (timeoutId) => {
-    // 清理旧的
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
-    // 监听 meet_participants 表
-    const channel = supabase
-      .channel(`meet-wait-${characterId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'meet_participants', filter: `character_id=eq.${characterId}` },
-        (payload) => {
-          console.log("System pulled me into room!", payload);
-          if (timeoutId) clearTimeout(timeoutId); // 尝试清理
-          router.push(`/meet/room/${payload.new.room_id}`);
-        }
-      )
-      .subscribe();
-      
-    channelRef.current = channel;
-  };
-
-  // 移除旧的 checkQueueAndMatch 和 createRoom 函数，因为逻辑已经移交给了数据库
-  // 仅保留必要的辅助函数
+  // 移除旧的 Realtime 订阅，完全依赖轮询 RPC
+  // const subscribeToRealtime = ... 
 
   const handleExit = async () => {
     if (status === 'creating') return; 
