@@ -18,7 +18,7 @@ export async function generateStaticParams() {
 }
 
 export default async function ArchiveCharacterPage({ params }) {
-  const { id } = params;
+  const { id } = await params;
   const { data: character } = await supabase.from("characters").select("*").eq("id", id).single();
 
   if (!character) {

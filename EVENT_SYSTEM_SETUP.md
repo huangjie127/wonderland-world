@@ -107,9 +107,21 @@ CREATE INDEX IF NOT EXISTS interactions_created_at_idx ON character_interactions
 
 ## 🛠️ 故障排除 / 更新现有表
 
-如果你在运行上面的脚本时遇到 "relation already exists" 或 "policy already exists" 错误，说明表已经存在了。
+### 1. 修复：允许所有人查看角色主页 (RLS 策略更新)
 
-### 选项 A：保留数据并更新（推荐）
+如果你发现访客无法查看角色事件（页面空白），请运行以下 SQL 来开放读取权限：
+
+```sql
+-- 1. 删除旧的严格策略（仅自己可见）
+DROP POLICY IF EXISTS "View own character events" ON character_events;
+DROP POLICY IF EXISTS "View character interactions" ON character_interactions;
+
+-- 2. 创建新的公开策略（所有人可见）
+CREATE POLICY "Public view events" ON character_events FOR SELECT USING (true);
+CREATE POLICY "Public view interactions" ON character_interactions FOR SELECT USING (true);
+```
+
+### 2. 选项 A：保留数据并更新（推荐）
 如果你已经有数据，只想添加新功能（评论关联），请运行以下补充脚本：
 
 ```sql

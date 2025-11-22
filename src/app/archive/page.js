@@ -43,7 +43,7 @@ export default function ArchivePage() {
               className="group cursor-pointer"
             >
               <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow h-full flex flex-col">
-                <div className="aspect-square bg-gray-200 overflow-hidden relative">
+                <div className="aspect-square bg-gray-200 overflow-hidden">
                   {char.avatar_url ? (
                     <img
                       src={char.avatar_url}
@@ -55,7 +55,6 @@ export default function ArchivePage() {
                       <span className="text-gray-600 text-4xl">👤</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
                 </div>
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="text-lg font-bold text-gray-800 line-clamp-1 mb-1">
