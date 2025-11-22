@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import CharacterSidebar from "@/components/CharacterSidebar";
 import CharacterDetail from "@/components/CharacterDetail";
 import CreateCharacter from "@/components/CreateCharacter";
+import RelationshipNotifications from "@/components/RelationshipNotifications";
 import "./home.css";
 
 export default function HomePage() {
@@ -15,6 +16,8 @@ export default function HomePage() {
   const [characters, setCharacters] = useState([]);
   const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // 重定向未登录用户
   useEffect(() => {
@@ -39,6 +42,18 @@ export default function HomePage() {
       // 默认选中第一个角色
       if (data && data.length > 0 && !selectedCharacterId) {
         setSelectedCharacterId(data[0].id);
+      }
+
+      // 检查待确认的关系请求
+      if (data && data.length > 0) {
+        const charIds = data.map((c) => c.id);
+        const { data: requests } = await supabase
+          .from("character_relationship_requests")
+          .select("id")
+          .in("to_character_id", charIds)
+          .eq("status", "pending");
+        
+        setPendingCount(requests?.length || 0);
       }
     };
 
@@ -101,6 +116,8 @@ export default function HomePage() {
         selectedCharacterId={selectedCharacterId}
         onSelectCharacter={setSelectedCharacterId}
         onCreateNew={() => setShowCreateForm(true)}
+        pendingCount={pendingCount}
+        onShowNotifications={() => setShowNotifications(true)}
       />
 
       {/* 右侧内容区 */}
@@ -108,6 +125,26 @@ export default function HomePage() {
         character={selectedCharacter} 
         onCharacterUpdated={handleCharacterUpdated}
         onCharacterDeleted={handleCharacterDeleted}
+      />
+
+      {/* 关系通知对话框 */}
+      <RelationshipNotifications
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onUpdate={() => {
+          // 刷新待确认计数
+          if (characters.length > 0) {
+            const charIds = characters.map((c) => c.id);
+            supabase
+              .from("character_relationship_requests")
+              .select("id")
+              .in("to_character_id", charIds)
+              .eq("status", "pending")
+              .then(({ data }) => {
+                setPendingCount(data?.length || 0);
+              });
+          }
+        }}
       />
     </div>
   );

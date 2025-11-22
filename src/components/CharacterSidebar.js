@@ -7,6 +7,8 @@ export default function CharacterSidebar({
   selectedCharacterId,
   onSelectCharacter,
   onCreateNew,
+  pendingCount,
+  onShowNotifications,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -16,14 +18,24 @@ export default function CharacterSidebar({
 
   return (
     <div className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* 头部 - 创建按钮 */}
-      <div className="p-4 border-b border-gray-200">
+      {/* 头部 - 创建按钮和通知 */}
+      <div className="p-4 border-b border-gray-200 space-y-3">
         <button
           onClick={onCreateNew}
           className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition"
         >
           + 创建新角色
         </button>
+
+        {/* 通知按钮 */}
+        {pendingCount > 0 && onShowNotifications && (
+          <button
+            onClick={onShowNotifications}
+            className="w-full relative bg-amber-100 text-amber-800 py-2 rounded-lg hover:bg-amber-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+          >
+            🔔 收到 {pendingCount} 个关系请求
+          </button>
+        )}
       </div>
 
       {/* 搜索框 */}
