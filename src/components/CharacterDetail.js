@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/providers";
 import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
+import AddEventDialog from "./AddEventDialog";
+import InteractionDialog from "./InteractionDialog";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
@@ -15,6 +17,8 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showRelationDialog, setShowRelationDialog] = useState(false);
+  const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [showInteractionDialog, setShowInteractionDialog] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: "",
     tagline: "",
@@ -35,29 +39,54 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
       setLoading(true);
 
       try {
-        const [eventsData, albumsData, relationsData] = await Promise.all([
+        // 加载新的事件系统数据
+        const [selfEventsData, interactionsData, albumsData] = await Promise.all([
           supabase
-            .from("character_event_logs")
+            .from("character_events")
             .select("*")
             .eq("character_id", character.id)
             .order("created_at", { ascending: false })
-            .limit(5),
+            .limit(10),
+          supabase
+            .from("character_interactions")
+            .select("*")
+            .eq("host_character_id", character.id)
+            .order("created_at", { ascending: false })
+            .limit(10),
           supabase
             .from("character_albums")
             .select("*")
             .eq("character_id", character.id)
             .order("created_at", { ascending: false })
             .limit(4),
-          supabase
-            .from("character_relations")
-            .select("*")
-            .eq("character_id", character.id)
-            .limit(3),
         ]);
 
-        setEvents(eventsData.data || []);
+        // 合并自定义事件和互动事件，按时间排序
+        const allEvents = [];
+        
+        (selfEventsData.data || []).forEach((evt) => {
+          allEvents.push({
+            ...evt,
+            eventType: "SELF",
+            emoji: "📘",
+          });
+        });
+
+        (interactionsData.data || []).forEach((interaction) => {
+          allEvents.push({
+            ...interaction,
+            eventType: "INTERACTION",
+            emoji: "🌟",
+          });
+        });
+
+        allEvents.sort(
+          (a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        setEvents(allEvents.slice(0, 8)); // 显示最多 8 条
         setAlbums(albumsData.data || []);
-        setRelations(relationsData.data || []);
       } catch (err) {
         console.error("Error fetching character data:", err);
       }
@@ -422,45 +451,73 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         {/* 事件时间轴 */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">事件记录</h2>
-            {events.length > 0 && (
-              <button className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold">
-                查看全部 →
+            <h2 className="text-xl font-bold text-gray-800">📖 事件 & 留言</h2>
+            <div className="flex gap-2">
+              {character.user_id === user?.id && (
+                <button
+                  onClick={() => setShowAddEventDialog(true)}
+                  className="text-sm px-3 py-1 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 font-semibold"
+                >
+                  📝 记录
+                </button>
+              )}
+              <button
+                onClick={() => setShowInteractionDialog(true)}
+                className="text-sm px-3 py-1 bg-purple-100 text-purple-600 rounded hover:bg-purple-200 font-semibold"
+              >
+                💬 留言
               </button>
-            )}
+            </div>
           </div>
 
           {events.length > 0 ? (
-            <div className="space-y-4">
-              {events.map((event, idx) => (
-                <div key={event.id} className="flex gap-4">
-                  {/* 时间线 */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-4 h-4 rounded-full bg-indigo-600 border-2 border-white"></div>
-                    {idx < events.length - 1 && (
-                      <div className="w-0.5 h-12 bg-gray-300 my-2"></div>
-                    )}
-                  </div>
+            <div className="space-y-3">
+              {events.map((event, idx) => {
+                const isSelfEvent = event.eventType === "SELF";
+                return (
+                  <div key={event.id} className="flex gap-3">
+                    {/* 时间线 */}
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div className={`w-3 h-3 rounded-full border-2 border-white ${
+                        isSelfEvent ? "bg-indigo-500" : "bg-purple-500"
+                      }`}></div>
+                      {idx < events.length - 1 && (
+                        <div className="w-0.5 h-10 bg-gray-300 my-1"></div>
+                      )}
+                    </div>
 
-                  {/* 事件内容 */}
-                  <div className="pb-4 flex-1">
-                    <h3 className="font-semibold text-gray-800">{event.title}</h3>
-                    {event.content && (
-                      <p className="text-sm text-gray-600 mt-1">{event.content}</p>
-                    )}
-                    {event.image_url && (
-                      <img
-                        src={event.image_url}
-                        alt={event.title}
-                        className="w-full h-32 object-cover rounded-lg mt-2"
-                      />
-                    )}
-                    <p className="text-xs text-gray-500 mt-2">
-                      {new Date(event.created_at).toLocaleDateString("zh-CN")}
-                    </p>
+                    {/* 事件卡片 */}
+                    <div className="pb-3 flex-1 bg-gray-50 rounded-lg p-3 border-l-4 border-gray-300 hover:border-indigo-400 transition">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {isSelfEvent ? (
+                            <>
+                              <h3 className="font-semibold text-gray-800">
+                                {event.emoji} {event.type ? `【${event.type}】` : "记录"}
+                              </h3>
+                              <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                                {event.content}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <h3 className="font-semibold text-purple-700">
+                                {event.emoji} 有人来访
+                              </h3>
+                              <p className="text-sm text-gray-700 mt-1 leading-relaxed italic">
+                                "{event.content}"
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(event.created_at).toLocaleDateString("zh-CN")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-500 text-sm">暂无事件记录</p>
@@ -533,6 +590,30 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           />
         </div>
       </div>
+
+      {/* 事件对话框 */}
+      <AddEventDialog
+        isOpen={showAddEventDialog}
+        onClose={() => setShowAddEventDialog(false)}
+        characterId={character.id}
+        characterName={character.name}
+        onEventAdded={() => {
+          setShowAddEventDialog(false);
+          fetchData();
+        }}
+      />
+
+      {/* 互动对话框 */}
+      <InteractionDialog
+        isOpen={showInteractionDialog}
+        onClose={() => setShowInteractionDialog(false)}
+        hostCharacterId={character.id}
+        hostCharacterName={character.name}
+        onInteractionAdded={() => {
+          setShowInteractionDialog(false);
+          fetchData();
+        }}
+      />
     </div>
   );
 }
