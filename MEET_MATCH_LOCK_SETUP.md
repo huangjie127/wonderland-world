@@ -9,13 +9,14 @@
 DROP FUNCTION IF EXISTS match_player;
 DROP FUNCTION IF EXISTS create_or_join_match;
 
--- 2. 确保 meet_queue (waiting_pool) 结构正确
--- 我们复用 meet_queue 表，但确保它有唯一约束
-CREATE TABLE IF NOT EXISTS meet_queue (
+-- 2. 重建 meet_queue 表 (确保干净的环境)
+DROP TABLE IF EXISTS meet_queue CASCADE;
+
+CREATE TABLE meet_queue (
   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   character_id bigint REFERENCES characters(id) ON DELETE CASCADE,
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(character_id)
+  UNIQUE(character_id) -- 必须有这个约束，ON CONFLICT 才能工作
 );
 
 -- 3. 创建控制表 (match_control)

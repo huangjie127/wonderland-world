@@ -132,9 +132,11 @@ export default function MeetLobby() {
 
         if (error) {
           console.error("Match RPC error:", error);
-          // 不中断，继续重试，除非是严重错误
-          if (error.code === 'PGRST116') { // JSON转换错误等
-             // ignore
+          // 如果是严重错误，显示出来
+          if (error.code !== 'PGRST116') {
+             setStatus('idle');
+             alert(`匹配出错: ${error.message}`);
+             return;
           }
         } else {
           console.log("Match status:", data);
