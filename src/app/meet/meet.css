@@ -2,14 +2,14 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  color: #e0e0e0;
+  color: #333;
   font-family: 'Courier New', Courier, monospace;
   text-align: center;
 }
 
 .meet-header {
   margin-bottom: 3rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #ccc;
   padding-bottom: 1rem;
 }
 
@@ -18,22 +18,24 @@
   margin-bottom: 1rem;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: #000;
 }
 
 .meet-instructions {
-  background: rgba(255, 255, 255, 0.05);
+  background: #f5f5f5;
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 3rem;
   text-align: left;
   line-height: 1.6;
-  border: 1px solid #444;
+  border: 1px solid #ddd;
+  color: #333;
 }
 
 .meet-instructions h3 {
   margin-top: 0;
-  color: #fff;
-  border-bottom: 1px solid #555;
+  color: #000;
+  border-bottom: 1px solid #ccc;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -47,8 +49,8 @@
 }
 
 .meet-btn {
-  background: #fff;
-  color: #000;
+  background: #000;
+  color: #fff;
   border: none;
   padding: 1.5rem 4rem;
   font-size: 1.5rem;
@@ -57,26 +59,30 @@
   transition: all 0.3s ease;
   letter-spacing: 2px;
   border-radius: 4px;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .meet-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  background: #333;
 }
 
-.meet-btn:disabled {
-  background: #555;
-  color: #888;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.meet-btn.exit-btn {
+  background: #d32f2f;
+  margin-top: 1rem;
+  padding: 1rem 3rem;
+  font-size: 1.2rem;
+}
+
+.meet-btn.exit-btn:hover {
+  background: #b71c1c;
 }
 
 .meet-status {
   margin-top: 2rem;
   font-size: 1.2rem;
-  color: #aaa;
+  color: #666;
   min-height: 2rem;
 }
 

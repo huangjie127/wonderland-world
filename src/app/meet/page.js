@@ -12,6 +12,8 @@ export default function MeetLobby() {
   const router = useRouter();
   const channelRef = useRef(null);
 
+  const isCreatingRef = useRef(false);
+
   useEffect(() => {
     // 1. 获取当前角色
     const loadCharacter = async () => {
@@ -44,6 +46,9 @@ export default function MeetLobby() {
   }, []);
 
   const leaveQueue = async () => {
+    // 只有在非匹配成功状态下才退出队列
+    // 但这里很难判断是否匹配成功，简单起见，如果还在 searching 就退出
+    // 由于 status 在这里可能是闭包旧值，我们不依赖它，直接尝试删除
     if (characterId) {
       await supabase.from('meet_queue').delete().eq('character_id', characterId);
     }
@@ -59,6 +64,7 @@ export default function MeetLobby() {
     }
 
     setStatus('searching');
+    isCreatingRef.current = false;
 
     // 1. 加入队列
     const { error } = await supabase.from('meet_queue').insert([{ character_id: characterId }]);
@@ -105,6 +111,9 @@ export default function MeetLobby() {
   };
 
   const checkQueueAndMatch = async () => {
+    // 如果正在创建中，不要重复执行
+    if (isCreatingRef.current) return;
+
     // 获取当前队列
     const { data: queue, error } = await supabase
       .from('meet_queue')
@@ -116,19 +125,16 @@ export default function MeetLobby() {
     setQueueCount(queue.length);
 
     // 匹配逻辑：如果人数 >= 2，且我是队列中最后一个人（避免并发创建），则由我来创建房间
-    // 为了简化 MVP，只要人数 >= 2，且我是队列里的一员，我就尝试创建。
-    // 为了防止重复创建，我们可以锁定：只让队列的第一个人创建？或者最后一个人？
-    // 选最后一个人（最新加入的）来触发比较合理，因为他刚进来导致满员。
     
     const myIndex = queue.findIndex(q => q.character_id == characterId);
     const isMeInQueue = myIndex !== -1;
     
     if (queue.length >= 2 && isMeInQueue) {
       // 简单的防冲突：只有我是队列的最后一个（最新）时，我才执行创建
-      // 注意：时间戳可能相同，但这在 MVP 中概率较低
       const isLast = myIndex === queue.length - 1;
       
       if (isLast) {
+        isCreatingRef.current = true; // 锁定
         setStatus('creating');
         await createRoom(queue);
       } else {
@@ -138,36 +144,50 @@ export default function MeetLobby() {
   };
 
   const createRoom = async (queue) => {
-    // 1. 生成场景
-    const names = queue.map(q => q.characters?.name || '未知角色').join('、');
-    const scene = generateScene(names);
+    try {
+      // 1. 生成场景
+      const names = queue.map(q => q.characters?.name || '未知角色').join('、');
+      const scene = generateScene(names);
 
-    // 2. 创建房间
-    const { data: room, error: roomError } = await supabase
-      .from('meet_rooms')
-      .insert([{ scene_description: scene }])
-      .select()
-      .single();
+      // 2. 创建房间
+      const { data: room, error: roomError } = await supabase
+        .from('meet_rooms')
+        .insert([{ scene_description: scene }])
+        .select()
+        .single();
 
-    if (roomError) {
-      console.error("Create room error", roomError);
-      return;
+      if (roomError) throw roomError;
+
+      // 3. 添加参与者
+      const participants = queue.map(q => ({
+        room_id: room.id,
+        character_id: q.character_id
+      }));
+
+      const { error: partError } = await supabase.from('meet_participants').insert(participants);
+      if (partError) throw partError;
+
+      // 4. 清空队列 (删除这些已匹配的人)
+      const idsToRemove = queue.map(q => q.character_id);
+      await supabase.from('meet_queue').delete().in('character_id', idsToRemove);
+
+      // 5. 跳转 (监听器会处理，但为了快也可以直接跳)
+      router.push(`/meet/room/${room.id}`);
+    } catch (err) {
+      console.error("Create room failed:", err);
+      setStatus('searching'); // 回退状态
+      isCreatingRef.current = false; // 解锁
+      alert("创建房间失败，请重试");
     }
+  };
 
-    // 3. 添加参与者
-    const participants = queue.map(q => ({
-      room_id: room.id,
-      character_id: q.character_id
-    }));
-
-    await supabase.from('meet_participants').insert(participants);
-
-    // 4. 清空队列 (删除这些已匹配的人)
-    const idsToRemove = queue.map(q => q.character_id);
-    await supabase.from('meet_queue').delete().in('character_id', idsToRemove);
-
-    // 5. 跳转 (监听器会处理，但为了快也可以直接跳)
-    router.push(`/meet/room/${room.id}`);
+  const handleExit = async () => {
+    if (status === 'creating') return; // 创建中不允许退出，防止数据不一致
+    
+    await leaveQueue();
+    setStatus('idle');
+    setQueueCount(0);
+    isCreatingRef.current = false;
   };
 
   const generateScene = (names) => {
@@ -223,6 +243,12 @@ export default function MeetLobby() {
           <div className="meet-status status-searching">
             <p>正在为你生成世界...</p>
           </div>
+        )}
+
+        {status !== 'idle' && status !== 'creating' && (
+          <button className="meet-btn exit-btn" onClick={handleExit}>
+            退出匹配
+          </button>
         )}
       </div>
     </div>
