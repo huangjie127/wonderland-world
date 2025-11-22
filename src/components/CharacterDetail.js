@@ -8,10 +8,12 @@ import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
 import AddEventDialog from "./AddEventDialog";
 import InteractionDialog from "./InteractionDialog";
+import EventDetailDialog from "./EventDetailDialog";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
-  const [events, setEvents] = useState([]);
+  const [selfEvents, setSelfEvents] = useState([]);
+  const [interactions, setInteractions] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [relations, setRelations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,8 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [showRelationDialog, setShowRelationDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null); // 用于详情弹窗
+  const [activeTab, setActiveTab] = useState("events"); // events | interactions
   const [editFormData, setEditFormData] = useState({
     name: "",
     tagline: "",
@@ -46,13 +50,17 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             .select("*")
             .eq("character_id", character.id)
             .order("created_at", { ascending: false })
-            .limit(10),
+            .limit(20),
           supabase
             .from("character_interactions")
-            .select("*")
+            .select(`
+              *,
+              guest:characters!guest_character_id(name, avatar_url)
+            `)
             .eq("host_character_id", character.id)
+            .is("event_id", null) // 只获取留言板内容，不获取事件评论
             .order("created_at", { ascending: false })
-            .limit(10),
+            .limit(50),
           supabase
             .from("character_albums")
             .select("*")
@@ -61,31 +69,8 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             .limit(4),
         ]);
 
-        // 合并自定义事件和互动事件，按时间排序
-        const allEvents = [];
-        
-        (selfEventsData.data || []).forEach((evt) => {
-          allEvents.push({
-            ...evt,
-            eventType: "SELF",
-            emoji: "📘",
-          });
-        });
-
-        (interactionsData.data || []).forEach((interaction) => {
-          allEvents.push({
-            ...interaction,
-            eventType: "INTERACTION",
-            emoji: "🌟",
-          });
-        });
-
-        allEvents.sort(
-          (a, b) =>
-            new Date(b.created_at) - new Date(a.created_at)
-        );
-
-        setEvents(allEvents.slice(0, 8)); // 显示最多 8 条
+        setSelfEvents(selfEventsData.data || []);
+        setInteractions(interactionsData.data || []);
         setAlbums(albumsData.data || []);
       } catch (err) {
         console.error("Error fetching character data:", err);
@@ -448,79 +433,166 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           </div>
         )}
 
-        {/* 事件时间轴 */}
+        {/* 事件与留言板块 */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">📖 事件 & 留言</h2>
-            <div className="flex gap-2">
-              {character.user_id === user?.id && (
+          <div className="flex items-center justify-between mb-4 border-b border-gray-200">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveTab("events")}
+                className={`pb-3 font-bold text-lg transition ${
+                  activeTab === "events"
+                    ? "text-indigo-600 border-b-2 border-indigo-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                📖 个人事件
+              </button>
+              <button
+                onClick={() => setActiveTab("interactions")}
+                className={`pb-3 font-bold text-lg transition ${
+                  activeTab === "interactions"
+                    ? "text-purple-600 border-b-2 border-purple-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                💬 访客留言
+              </button>
+            </div>
+            
+            <div>
+              {activeTab === "events" && character.user_id === user?.id && (
                 <button
                   onClick={() => setShowAddEventDialog(true)}
                   className="text-sm px-3 py-1 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 font-semibold"
                 >
-                  📝 记录
+                  📝 记录新事件
                 </button>
               )}
-              <button
-                onClick={() => setShowInteractionDialog(true)}
-                className="text-sm px-3 py-1 bg-purple-100 text-purple-600 rounded hover:bg-purple-200 font-semibold"
-              >
-                💬 留言
-              </button>
+              {activeTab === "interactions" && (
+                <button
+                  onClick={() => setShowInteractionDialog(true)}
+                  className="text-sm px-3 py-1 bg-purple-100 text-purple-600 rounded hover:bg-purple-200 font-semibold"
+                >
+                  💬 我要留言
+                </button>
+              )}
             </div>
           </div>
 
-          {events.length > 0 ? (
+          {/* 个人事件列表 */}
+          {activeTab === "events" && (
             <div className="space-y-3">
-              {events.map((event, idx) => {
-                const isSelfEvent = event.eventType === "SELF";
-                return (
-                  <div key={event.id} className="flex gap-3">
-                    {/* 时间线 */}
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <div className={`w-3 h-3 rounded-full border-2 border-white ${
-                        isSelfEvent ? "bg-indigo-500" : "bg-purple-500"
-                      }`}></div>
-                      {idx < events.length - 1 && (
-                        <div className="w-0.5 h-10 bg-gray-300 my-1"></div>
+              {selfEvents.length > 0 ? (
+                selfEvents.map((event) => {
+                  // 提取类型和内容
+                  const typeMatch = event.content.match(/^\[(.*?)\]/);
+                  const type = typeMatch ? typeMatch[1] : "记录";
+                  const rawContent = event.content.replace(/^\[.*?\]\s*/, "");
+                  const previewContent = rawContent.length > 30 
+                    ? rawContent.substring(0, 30) + "..." 
+                    : rawContent;
+
+                  // 根据类型选择 emoji
+                  let emoji = "📘";
+                  if (type === "worldview") emoji = "🌍";
+                  if (type === "story") emoji = "📖";
+                  if (type === "mood") emoji = "📝";
+                  if (type === "timeline") emoji = "⏰";
+
+                  return (
+                    <div 
+                      key={event.id} 
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer group"
+                      onClick={() => setSelectedEvent(event)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          {emoji} {type}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(event.created_at).toLocaleDateString("zh-CN")}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 text-sm leading-relaxed group-hover:text-indigo-700 transition">
+                        {previewContent}
+                      </p>
+                      {rawContent.length > 30 && (
+                        <p className="text-xs text-indigo-500 mt-2 font-medium">
+                          查看完整内容 & 评论 →
+                        </p>
                       )}
                     </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <p className="text-gray-500 text-sm">暂无个人事件记录</p>
+                  {character.user_id === user?.id && (
+                    <button 
+                      onClick={() => setShowAddEventDialog(true)}
+                      className="mt-2 text-indigo-600 text-sm font-semibold hover:underline"
+                    >
+                      添加第一条记录
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-                    {/* 事件卡片 */}
-                    <div className="pb-3 flex-1 bg-gray-50 rounded-lg p-3 border-l-4 border-gray-300 hover:border-indigo-400 transition">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {isSelfEvent ? (
-                            <>
-                              <h3 className="font-semibold text-gray-800">
-                                {event.emoji} {event.type ? `【${event.type}】` : "记录"}
-                              </h3>
-                              <p className="text-sm text-gray-700 mt-1 leading-relaxed">
-                                {event.content}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <h3 className="font-semibold text-purple-700">
-                                {event.emoji} 有人来访
-                              </h3>
-                              <p className="text-sm text-gray-700 mt-1 leading-relaxed italic">
-                                "{event.content}"
-                              </p>
-                            </>
-                          )}
+          {/* 访客留言板 */}
+          {activeTab === "interactions" && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-[500px] overflow-y-auto">
+              {interactions.length > 0 ? (
+                <div className="space-y-4">
+                  {interactions.map((interaction) => (
+                    <div key={interaction.id} className="flex gap-3">
+                      {/* 访客头像 */}
+                      <div className="flex-shrink-0">
+                        {interaction.guest?.avatar_url ? (
+                          <img 
+                            src={interaction.guest.avatar_url} 
+                            alt={interaction.guest.name}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-300"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg border border-purple-200">
+                            👤
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 留言气泡 */}
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span className="font-bold text-sm text-gray-800">
+                            {interaction.guest?.name || "未知访客"}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(interaction.created_at).toLocaleString("zh-CN", {
+                              month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-200 text-sm text-gray-700 leading-relaxed">
+                          {interaction.content}
                         </div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {new Date(event.created_at).toLocaleDateString("zh-CN")}
-                      </p>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-400 text-sm mb-2">还没有人来留言...</p>
+                  <button
+                    onClick={() => setShowInteractionDialog(true)}
+                    className="text-purple-600 font-semibold text-sm hover:underline"
+                  >
+                    成为第一个访客
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-gray-500 text-sm">暂无事件记录</p>
           )}
         </div>
 
@@ -611,8 +683,16 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         hostCharacterName={character.name}
         onInteractionAdded={() => {
           setShowInteractionDialog(false);
-          fetchData();
+          fetchData(); // 刷新数据
         }}
+      />
+
+      {/* 事件详情弹窗 */}
+      <EventDetailDialog
+        isOpen={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        event={selectedEvent}
+        characterName={character.name}
       />
     </div>
   );

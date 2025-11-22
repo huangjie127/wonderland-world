@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS character_interactions (
   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   host_character_id bigint NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
   guest_character_id bigint NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-  type TEXT NOT NULL DEFAULT 'INTERACTION', -- INTERACTION
+  event_id bigint REFERENCES character_events(id) ON DELETE CASCADE, -- 关联特定事件（可选）
+  type TEXT NOT NULL DEFAULT 'INTERACTION', -- INTERACTION 或 COMMENT
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -86,6 +87,7 @@ CREATE INDEX IF NOT EXISTS events_character_idx ON character_events(character_id
 CREATE INDEX IF NOT EXISTS events_created_at_idx ON character_events(created_at);
 CREATE INDEX IF NOT EXISTS interactions_host_idx ON character_interactions(host_character_id);
 CREATE INDEX IF NOT EXISTS interactions_guest_idx ON character_interactions(guest_character_id);
+CREATE INDEX IF NOT EXISTS interactions_event_idx ON character_interactions(event_id);
 CREATE INDEX IF NOT EXISTS interactions_created_at_idx ON character_interactions(created_at);
 ```
 
@@ -102,3 +104,28 @@ CREATE INDEX IF NOT EXISTS interactions_created_at_idx ON character_interactions
 ## ✅ 完成！
 
 事件系统数据库配置完成。
+
+## 🛠️ 故障排除 / 更新现有表
+
+如果你在运行上面的脚本时遇到 "relation already exists" 或 "policy already exists" 错误，说明表已经存在了。
+
+### 选项 A：保留数据并更新（推荐）
+如果你已经有数据，只想添加新功能（评论关联），请运行以下补充脚本：
+
+```sql
+-- 添加 event_id 列到 character_interactions 表
+ALTER TABLE character_interactions 
+ADD COLUMN IF NOT EXISTS event_id bigint REFERENCES character_events(id) ON DELETE CASCADE;
+
+-- 添加索引
+CREATE INDEX IF NOT EXISTS interactions_event_idx ON character_interactions(event_id);
+```
+
+### 选项 B：清空重置（会删除所有事件数据）
+如果你想彻底重来，可以先删除旧表，然后再运行上面的完整脚本：
+
+```sql
+-- ⚠️ 警告：这将删除所有事件和互动数据！
+DROP TABLE IF EXISTS character_interactions CASCADE;
+DROP TABLE IF EXISTS character_events CASCADE;
+```
