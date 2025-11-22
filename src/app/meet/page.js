@@ -139,6 +139,11 @@ export default function MeetLobby() {
         } else {
           console.log("Match status:", data);
           
+          // 更新队列人数
+          if (data.queue_count !== undefined) {
+            setQueueCount(data.queue_count);
+          }
+
           if (data.status === 'matched' && data.room_id) {
             setStatus('idle');
             router.push(`/meet/room/${data.room_id}`);

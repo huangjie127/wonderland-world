@@ -89,7 +89,11 @@ BEGIN
 
   IF v_queue_count < 2 THEN
     -- 人数不足，继续等待
-    RETURN jsonb_build_object('status', 'waiting', 'message', 'Waiting for more players (' || v_queue_count || '/2)...');
+    RETURN jsonb_build_object(
+      'status', 'waiting', 
+      'message', 'Waiting for more players...',
+      'queue_count', v_queue_count
+    );
   
   ELSE
     -- =================================================
