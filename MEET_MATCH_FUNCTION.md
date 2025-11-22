@@ -5,9 +5,13 @@
 ```sql
 -- 1. 创建匹配函数
 -- 该函数处理：加入队列、检查现有房间、触发新房间创建
+-- ⚠️ 注意：如果之前创建过，请先运行 DROP FUNCTION match_player;
+
 CREATE OR REPLACE FUNCTION match_player(p_character_id bigint)
 RETURNS bigint -- 返回 room_id (如果匹配成功)，否则返回 NULL (表示进入等待)
 LANGUAGE plpgsql
+SECURITY DEFINER -- 关键：允许函数绕过 RLS 权限执行
+SET search_path = public -- 关键：防止搜索路径劫持
 AS $$
 DECLARE
   v_room_id bigint;
@@ -65,6 +69,12 @@ BEGIN
   RETURN NULL;
 END;
 $$;
+
+-- 2. 关键：授予执行权限
+-- 必须运行以下语句，否则前端会报 "function not found" 或 "permission denied"
+GRANT EXECUTE ON FUNCTION match_player(bigint) TO anon;
+GRANT EXECUTE ON FUNCTION match_player(bigint) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_player(bigint) TO service_role;
 ```
 
 ## 2. 验证

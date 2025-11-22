@@ -113,14 +113,14 @@ export default function MeetLobby() {
     try {
       // 调用数据库的原子匹配函数
       const { data: roomId, error } = await supabase.rpc('match_player', { 
-        p_character_id: characterId 
+        p_character_id: parseInt(characterId) // 确保转换为整数
       });
 
       if (error) {
         clearTimeout(timeoutId); // 出错清除定时器
-        console.error("Match error:", error);
+        console.error("Match error details:", error); // 打印详细错误
         setStatus('idle');
-        alert("匹配服务暂时不可用");
+        alert(`匹配服务暂时不可用: ${error.message || error.code}`);
         return;
       }
 
