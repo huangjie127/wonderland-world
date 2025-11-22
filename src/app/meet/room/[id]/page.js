@@ -181,23 +181,29 @@ export default function MeetRoom() {
       <div className="world-main-stage">
         <div className="messages-feed">
           {messages.map(msg => (
-            <div key={msg.id} className={`message-row ${msg.type}`}>
+            <div key={msg.id} className="message-row">
               {msg.type === 'chat' ? (
-                // 聊天样式
-                <div className={`chat-bubble-container ${msg.character_id === myCharacter?.id ? 'mine' : ''}`}>
-                  <div className="msg-avatar-small">{msg.characters?.name[0]}</div>
-                  <div className="chat-bubble">
+                // 聊天样式 (白底气泡 + 头像)
+                <div className="chat-bubble-container">
+                  <div className="msg-avatar-small">
+                    {msg.characters?.avatar_url ? 
+                      <img src={msg.characters.avatar_url} alt={msg.characters.name} /> : 
+                      msg.characters?.name[0]
+                    }
+                  </div>
+                  <div className="chat-content-wrapper">
                     <div className="msg-sender">{msg.characters?.name}</div>
-                    {msg.content}
+                    <div className="chat-bubble">
+                      {msg.content}
+                    </div>
                   </div>
                 </div>
               ) : (
-                // 行动样式
-                <div className="action-line">
-                  <span className="action-star">*</span>
+                // 行动样式 (灰底卡片 + 斜体)
+                <div className="action-card">
+                  <span className="action-icon">✨</span>
                   <span className="action-actor">{msg.characters?.name}</span>
                   <span className="action-content">{msg.content}</span>
-                  <span className="action-star">*</span>
                 </div>
               )}
             </div>
