@@ -13,6 +13,17 @@ export default function MeetLobby() {
   const channelRef = useRef(null);
 
   const isCreatingRef = useRef(false);
+  const statusRef = useRef('idle');
+  const characterIdRef = useRef(null);
+
+  // 同步 ref
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    characterIdRef.current = characterId;
+  }, [characterId]);
 
   useEffect(() => {
     // 1. 获取当前角色
@@ -73,11 +84,13 @@ export default function MeetLobby() {
     // 只有在非匹配成功状态下才退出队列
     // 但这里很难判断是否匹配成功，简单起见，如果还在 searching 就退出
     // 由于 status 在这里可能是闭包旧值，我们不依赖它，直接尝试删除
-    if (characterId) {
-      await supabase.from('meet_queue').delete().eq('character_id', characterId);
+    const currentId = characterIdRef.current;
+    if (currentId) {
+      await supabase.from('meet_queue').delete().eq('character_id', currentId);
     }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
   };
 
@@ -106,22 +119,26 @@ export default function MeetLobby() {
   };
 
   const subscribeToRealtime = () => {
-    // 监听 meet_participants 表，看自己是否被加入房间
-    const participantChannel = supabase
-      .channel('meet-participants-check')
+    // 清理旧的
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    // 使用唯一频道名，避免冲突
+    const channelName = `meet-room-${characterId}-${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel
+      // 监听 meet_participants 表，看自己是否被加入房间
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'meet_participants', filter: `character_id=eq.${characterId}` },
         (payload) => {
-          console.log("Matched!", payload);
+          console.log("Matched via Realtime!", payload);
           router.push(`/meet/room/${payload.new.room_id}`);
         }
       )
-      .subscribe();
-
-    // 监听 meet_queue 表，更新人数，或者触发匹配
-    const queueChannel = supabase
-      .channel('meet-queue-check')
+      // 监听 meet_queue 表，更新人数，或者触发匹配
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'meet_queue' },
@@ -131,12 +148,37 @@ export default function MeetLobby() {
       )
       .subscribe();
       
-    channelRef.current = queueChannel; // 简单引用，实际应该管理多个
+    channelRef.current = channel;
   };
 
   const checkQueueAndMatch = async () => {
     // 如果正在创建中，不要重复执行
     if (isCreatingRef.current) return;
+
+    const currentId = characterIdRef.current;
+    if (!currentId) return;
+
+    // 0. 兜底检查：如果我正在搜索，但我不在队列里了，可能是我被匹配了（但没收到 Realtime 事件）
+    // 或者我被踢了。检查一下 meet_participants
+    if (statusRef.current === 'searching' || statusRef.current === 'waiting_for_match') {
+       const { data: participation } = await supabase
+         .from('meet_participants')
+         .select('room_id, joined_at')
+         .eq('character_id', currentId)
+         .order('joined_at', { ascending: false })
+         .limit(1)
+         .single();
+       
+       // 如果发现最近 1 分钟内加入的房间，直接跳转
+       if (participation) {
+          const joinTime = new Date(participation.joined_at).getTime();
+          if (Date.now() - joinTime < 60000) {
+             console.log("Found room via polling/fallback:", participation);
+             router.push(`/meet/room/${participation.room_id}`);
+             return;
+          }
+       }
+    }
 
     // 获取当前队列
     const { data: queue, error } = await supabase
@@ -150,7 +192,7 @@ export default function MeetLobby() {
 
     // 匹配逻辑：如果人数 >= 2，且我是队列中最后一个人（避免并发创建），则由我来创建房间
     
-    const myIndex = queue.findIndex(q => q.character_id == characterId);
+    const myIndex = queue.findIndex(q => q.character_id == currentId);
     const isMeInQueue = myIndex !== -1;
     
     if (queue.length >= 2 && isMeInQueue) {
