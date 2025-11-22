@@ -3,12 +3,24 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/app/providers";
 
-export default function CharacterDetail({ character }) {
+export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted }) {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [relations, setRelations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    tagline: "",
+    description: "",
+    avatar: null,
+    avatarPreview: null,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!character) {
@@ -53,6 +65,122 @@ export default function CharacterDetail({ character }) {
     fetchData();
   }, [character?.id]);
 
+  // 初始化编辑表单
+  const handleEditClick = () => {
+    setEditFormData({
+      name: character.name,
+      tagline: character.tagline || "",
+      description: character.description || "",
+      avatar: null,
+      avatarPreview: character.avatar_url,
+    });
+    setIsEditing(true);
+    setError("");
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditFormData((prev) => ({
+        ...prev,
+        avatar: file,
+        avatarPreview: URL.createObjectURL(file),
+      }));
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editFormData.name.trim()) {
+      setError("角色名称不能为空");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      let newAvatarUrl = character.avatar_url;
+
+      // 上传新头像（如果选择了）
+      if (editFormData.avatar) {
+        const fileExt = editFormData.avatar.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, editFormData.avatar, {
+            upsert: false,
+            contentType: editFormData.avatar.type,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+        newAvatarUrl = data?.publicUrl;
+      }
+
+      // 更新角色信息
+      const { error: updateError } = await supabase
+        .from("characters")
+        .update({
+          name: editFormData.name,
+          tagline: editFormData.tagline,
+          description: editFormData.description,
+          avatar_url: newAvatarUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", character.id);
+
+      if (updateError) throw updateError;
+
+      // 通知父组件更新
+      if (onCharacterUpdated) {
+        onCharacterUpdated({
+          ...character,
+          name: editFormData.name,
+          tagline: editFormData.tagline,
+          description: editFormData.description,
+          avatar_url: newAvatarUrl,
+        });
+      }
+
+      setIsEditing(false);
+    } catch (err) {
+      setError(err.message || "更新失败");
+      console.error("Update error:", err);
+    }
+
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("确定要删除这个角色吗？所有相关数据（事件、相册等）也会被删除。")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("characters")
+        .delete()
+        .eq("id", character.id);
+
+      if (error) throw error;
+
+      if (onCharacterDeleted) {
+        onCharacterDeleted(character.id);
+      }
+    } catch (err) {
+      alert("删除失败：" + err.message);
+      console.error("Delete error:", err);
+    }
+  };
+
   if (!character) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -69,6 +197,133 @@ export default function CharacterDetail({ character }) {
     );
   }
 
+  // 编辑模式
+  if (isEditing) {
+    return (
+      <div className="flex-1 bg-white overflow-y-auto p-6">
+        <div className="max-w-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">编辑角色信息</h2>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="text-gray-600 hover:text-gray-800 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {/* 头像 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                角色头像
+              </label>
+              <div className="flex items-center gap-4">
+                {editFormData.avatarPreview && (
+                  <img
+                    src={editFormData.avatarPreview}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-50 file:text-indigo-700
+                      hover:file:bg-indigo-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    留空保持原头像，选择新文件替换
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 角色名称 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                角色名称 *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={editFormData.name}
+                onChange={handleEditInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* 标语 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                标语
+              </label>
+              <input
+                type="text"
+                name="tagline"
+                value={editFormData.tagline}
+                onChange={handleEditInputChange}
+                placeholder="一句话简介"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* 描述 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                描述
+              </label>
+              <textarea
+                name="description"
+                value={editFormData.description}
+                onChange={handleEditInputChange}
+                placeholder="详细描述角色信息"
+                rows="6"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 font-semibold transition"
+              >
+                {saving ? "保存中..." : "保存更改"}
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 font-semibold transition"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition"
+              >
+                🗑️ 删除
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 查看模式
   return (
     <div className="flex-1 bg-white overflow-y-auto">
       {/* 头部 - 角色信息 */}
@@ -99,8 +354,11 @@ export default function CharacterDetail({ character }) {
           </div>
 
           {/* 编辑按钮 */}
-          <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0">
-            编辑
+          <button
+            onClick={handleEditClick}
+            className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0"
+          >
+            ✏️ 编辑
           </button>
         </div>
       </div>

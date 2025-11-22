@@ -51,6 +51,23 @@ export default function HomePage() {
     setShowCreateForm(false);
   };
 
+  const handleCharacterUpdated = (updatedCharacter) => {
+    setCharacters((prev) =>
+      prev.map((c) => (c.id === updatedCharacter.id ? updatedCharacter : c))
+    );
+    setSelectedCharacterId(updatedCharacter.id);
+  };
+
+  const handleCharacterDeleted = (deletedCharacterId) => {
+    setCharacters((prev) => prev.filter((c) => c.id !== deletedCharacterId));
+    
+    // 如果删除的是当前选中的角色，选择下一个
+    if (selectedCharacterId === deletedCharacterId) {
+      const remainingCharacters = characters.filter((c) => c.id !== deletedCharacterId);
+      setSelectedCharacterId(remainingCharacters.length > 0 ? remainingCharacters[0].id : null);
+    }
+  };
+
   const selectedCharacter = characters.find((c) => c.id === selectedCharacterId);
 
   if (authLoading) {
@@ -87,7 +104,11 @@ export default function HomePage() {
       />
 
       {/* 右侧内容区 */}
-      <CharacterDetail character={selectedCharacter} />
+      <CharacterDetail 
+        character={selectedCharacter} 
+        onCharacterUpdated={handleCharacterUpdated}
+        onCharacterDeleted={handleCharacterDeleted}
+      />
     </div>
   );
 }
