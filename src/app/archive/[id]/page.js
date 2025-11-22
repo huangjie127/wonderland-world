@@ -1,21 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
 import CharacterDetail from "@/components/CharacterDetail";
 
-export async function generateStaticParams() {
-  try {
-    const { data: characters } = await supabase
-      .from("characters")
-      .select("id")
-      .limit(100);
-    
-    return (characters || []).map((character) => ({
-      id: String(character.id),
-    }));
-  } catch (error) {
-    console.error("Error generating static params:", error);
-    return [];
-  }
-}
+// 强制动态渲染，确保每次访问都获取最新数据
+export const dynamic = "force-dynamic";
 
 export default async function ArchiveCharacterPage({ params }) {
   const { id } = await params;
@@ -25,6 +12,7 @@ export default async function ArchiveCharacterPage({ params }) {
     return (
       <div className="max-w-3xl mx-auto py-12 text-center">
         <h1 className="text-2xl font-bold text-gray-600">角色不存在</h1>
+        <p className="text-gray-500 mt-2">ID: {id}</p>
       </div>
     );
   }
