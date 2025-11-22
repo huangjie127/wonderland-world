@@ -33,52 +33,48 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!character) {
-      setLoading(false);
-      return;
+  const fetchData = async () => {
+    if (!character) return;
+    setLoading(true);
+
+    try {
+      // 加载新的事件系统数据
+      const [selfEventsData, interactionsData, albumsData] = await Promise.all([
+        supabase
+          .from("character_events")
+          .select("*")
+          .eq("character_id", character.id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("character_interactions")
+          .select(`
+            *,
+            guest:characters!guest_character_id(name, avatar_url)
+          `)
+          .eq("host_character_id", character.id)
+          .is("event_id", null) // 只获取留言板内容，不获取事件评论
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("character_albums")
+          .select("*")
+          .eq("character_id", character.id)
+          .order("created_at", { ascending: false })
+          .limit(4),
+      ]);
+
+      setSelfEvents(selfEventsData.data || []);
+      setInteractions(interactionsData.data || []);
+      setAlbums(albumsData.data || []);
+    } catch (err) {
+      console.error("Error fetching character data:", err);
     }
 
-    const fetchData = async () => {
-      setLoading(true);
+    setLoading(false);
+  };
 
-      try {
-        // 加载新的事件系统数据
-        const [selfEventsData, interactionsData, albumsData] = await Promise.all([
-          supabase
-            .from("character_events")
-            .select("*")
-            .eq("character_id", character.id)
-            .order("created_at", { ascending: false })
-            .limit(20),
-          supabase
-            .from("character_interactions")
-            .select(`
-              *,
-              guest:characters!guest_character_id(name, avatar_url)
-            `)
-            .eq("host_character_id", character.id)
-            .is("event_id", null) // 只获取留言板内容，不获取事件评论
-            .order("created_at", { ascending: false })
-            .limit(50),
-          supabase
-            .from("character_albums")
-            .select("*")
-            .eq("character_id", character.id)
-            .order("created_at", { ascending: false })
-            .limit(4),
-        ]);
-
-        setSelfEvents(selfEventsData.data || []);
-        setInteractions(interactionsData.data || []);
-        setAlbums(albumsData.data || []);
-      } catch (err) {
-        console.error("Error fetching character data:", err);
-      }
-
-      setLoading(false);
-    };
-
+  useEffect(() => {
     fetchData();
   }, [character?.id]);
 
