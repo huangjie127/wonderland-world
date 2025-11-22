@@ -217,3 +217,12 @@ $func$;
 GRANT EXECUTE ON FUNCTION maintain_worlds() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION join_world(bigint, bigint) TO anon, authenticated, service_role;
 
+-- ==========================================
+-- 8. 开启实时订阅 (Realtime)
+-- ==========================================
+-- 必须显式将表添加到 supabase_realtime 发布中，否则客户端无法监听到 INSERT/UPDATE 事件
+ALTER PUBLICATION supabase_realtime ADD TABLE meet_rooms;
+ALTER PUBLICATION supabase_realtime ADD TABLE meet_participants;
+ALTER PUBLICATION supabase_realtime ADD TABLE meet_messages;
+```
+

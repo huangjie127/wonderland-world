@@ -70,11 +70,13 @@ export default function MeetRoom() {
     initRoom();
 
     // 2. 实时订阅
+    console.log("Subscribing to room:", roomId);
     const channel = supabase
       .channel(`room-${roomId}`)
       // 监听新消息
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meet_messages', filter: `room_id=eq.${roomId}` }, 
         async (payload) => {
+          console.log("New message received:", payload);
           const { data: char } = await supabase.from('characters').select('name, avatar_url').eq('id', payload.new.character_id).single();
           setMessages(prev => [...prev, { ...payload.new, characters: char }]);
         }
@@ -125,17 +127,28 @@ export default function MeetRoom() {
 
   const handleSend = async (type) => {
     const content = type === 'chat' ? chatInput : actionInput;
-    if (!content.trim() || !myCharacter) return;
+    if (!content.trim()) return;
+    
+    if (!myCharacter) {
+      console.error("No active character found");
+      alert("未找到当前角色，请重新登录或选择角色");
+      return;
+    }
 
-    await supabase.from('meet_messages').insert([{
+    const { error } = await supabase.from('meet_messages').insert([{
       room_id: roomId,
       character_id: myCharacter.id,
       type,
       content
     }]);
 
-    if (type === 'chat') setChatInput('');
-    else setActionInput('');
+    if (error) {
+      console.error("Error sending message:", error);
+      alert(`发送失败: ${error.message}`);
+    } else {
+      if (type === 'chat') setChatInput('');
+      else setActionInput('');
+    }
   };
 
   const handleLeave = async () => {
