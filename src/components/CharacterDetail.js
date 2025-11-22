@@ -190,8 +190,8 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         .from("character_relationship_requests")
         .insert([
           {
-            from_character_id: user.id, // 这里应该是当前用户的某个角色，实际需要调整
-            to_character_id: character.id,
+            from_character_id: relationshipData.from_character_id,
+            to_character_id: relationshipData.to_character_id,
             from_role: relationshipData.from_role,
             to_role: relationshipData.to_role,
             status: "pending",
@@ -403,6 +403,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         isOpen={showRelationDialog}
         onClose={() => setShowRelationDialog(false)}
         onSubmit={handleRelationshipSubmit}
+        targetCharacterId={character.id}
         targetCharacterName={character.name}
       />
 

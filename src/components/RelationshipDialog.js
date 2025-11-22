@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/app/providers";
 
 const PRESET_RELATIONSHIPS = {
   family: [
@@ -34,9 +36,13 @@ export default function RelationshipDialog({
   isOpen,
   onClose,
   onSubmit,
+  targetCharacterId,
   targetCharacterName,
 }) {
-  const [step, setStep] = useState(1); // 1: 选择预设, 2: 自定义, 3: 确认
+  const { user } = useAuth();
+  const [step, setStep] = useState(1); // 1: 选择发起者, 2: 选择预设, 3: 自定义, 4: 确认
+  const [myCharacters, setMyCharacters] = useState([]);
+  const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [category, setCategory] = useState(null);
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [customFromRole, setCustomFromRole] = useState("");
@@ -44,11 +50,32 @@ export default function RelationshipDialog({
   const [fromRole, setFromRole] = useState("");
   const [toRole, setToRole] = useState("");
 
+  // 加载用户的所有角色
+  useEffect(() => {
+    if (!isOpen || !user) return;
+
+    const fetchMyCharacters = async () => {
+      const { data } = await supabase
+        .from("characters")
+        .select("id, name, avatar_url")
+        .eq("user_id", user.id);
+
+      setMyCharacters(data || []);
+    };
+
+    fetchMyCharacters();
+  }, [isOpen, user]);
+
+  const handleCharacterSelect = (charId) => {
+    setSelectedCharacterId(charId);
+    setStep(2);
+  };
+
   const handlePresetSelect = (preset) => {
     setSelectedPreset(preset);
     setFromRole(preset.from);
     setToRole(preset.to);
-    setStep(3);
+    setStep(4);
   };
 
   const handleCustomSubmit = () => {
@@ -58,11 +85,13 @@ export default function RelationshipDialog({
     }
     setFromRole(customFromRole);
     setToRole(customToRole);
-    setStep(3);
+    setStep(4);
   };
 
   const handleConfirm = () => {
     onSubmit({
+      from_character_id: selectedCharacterId,
+      to_character_id: targetCharacterId,
       from_role: fromRole,
       to_role: toRole,
     });
@@ -71,6 +100,7 @@ export default function RelationshipDialog({
 
   const resetDialog = () => {
     setStep(1);
+    setSelectedCharacterId(null);
     setCategory(null);
     setSelectedPreset(null);
     setCustomFromRole("");
@@ -81,6 +111,8 @@ export default function RelationshipDialog({
   };
 
   if (!isOpen) return null;
+
+  const selectedCharName = myCharacters.find((c) => c.id === selectedCharacterId)?.name;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -95,15 +127,62 @@ export default function RelationshipDialog({
 
         <h2 className="text-2xl font-bold mb-4">与 {targetCharacterName} 建立关系</h2>
 
-        {/* Step 1: 选择预设 */}
+        {/* Step 1: 选择发起者角色 */}
         {step === 1 && (
           <div className="space-y-3">
+            <p className="text-sm text-gray-600 mb-3">选择你的哪个角色与对方建立关系：</p>
+            {myCharacters.length > 0 ? (
+              <div className="space-y-2">
+                {myCharacters.map((char) => (
+                  <button
+                    key={char.id}
+                    onClick={() => handleCharacterSelect(char.id)}
+                    className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex-shrink-0">
+                      {char.avatar_url ? (
+                        <img
+                          src={char.avatar_url}
+                          alt={char.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-sm">
+                          👤
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-semibold">{char.name}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">你还没有创建任何角色</p>
+            )}
+          </div>
+        )}
+
+        {/* Step 2: 选择预设 */}
+        {step === 2 && selectedCharName && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setStep(1)}
+              className="text-indigo-600 hover:text-indigo-700 text-sm font-semibold mb-3"
+            >
+              ← 返回选择角色
+            </button>
+
+            <p className="text-sm text-gray-600">
+              <span className="font-semibold">{selectedCharName}</span> 与{" "}
+              <span className="font-semibold">{targetCharacterName}</span> 的关系
+            </p>
+
             {Object.entries(PRESET_RELATIONSHIPS).map(([key, relationships]) => (
               <button
                 key={key}
                 onClick={() => {
                   setCategory(key);
-                  setStep(2);
+                  setStep(3);
                 }}
                 className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition"
               >
@@ -121,7 +200,10 @@ export default function RelationshipDialog({
             ))}
 
             <button
-              onClick={() => setStep(2)}
+              onClick={() => {
+                setCategory(null);
+                setStep(3);
+              }}
               className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition font-semibold text-gray-700"
             >
               + 自定义关系
@@ -129,11 +211,11 @@ export default function RelationshipDialog({
           </div>
         )}
 
-        {/* Step 2: 选择具体关系或自定义 */}
-        {step === 2 && category && (
+        {/* Step 3: 选择具体关系或自定义 */}
+        {step === 3 && category && (
           <div className="space-y-3">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="text-indigo-600 hover:text-indigo-700 text-sm font-semibold mb-3"
             >
               ← 返回分类
@@ -147,7 +229,7 @@ export default function RelationshipDialog({
                   className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition"
                 >
                   <p className="font-semibold">
-                    你是{rel.from} → 对方是{rel.to}
+                    {selectedCharName}是{rel.from} → {targetCharacterName}是{rel.to}
                   </p>
                 </button>
               ))}
@@ -156,7 +238,7 @@ export default function RelationshipDialog({
             <button
               onClick={() => {
                 setCategory(null);
-                setStep(2);
+                setStep(3);
               }}
               className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition font-semibold text-gray-700 mt-4"
             >
@@ -165,11 +247,11 @@ export default function RelationshipDialog({
           </div>
         )}
 
-        {/* Step 2: 自定义关系 */}
-        {step === 2 && !category && (
+        {/* Step 3: 自定义关系 */}
+        {step === 3 && !category && (
           <div className="space-y-4">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="text-indigo-600 hover:text-indigo-700 text-sm font-semibold mb-3"
             >
               ← 返回
@@ -177,7 +259,7 @@ export default function RelationshipDialog({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                你是{targetCharacterName}的什么？ *
+                {selectedCharName}是{targetCharacterName}的什么？ *
               </label>
               <input
                 type="text"
@@ -190,7 +272,7 @@ export default function RelationshipDialog({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {targetCharacterName}是你的什么？ *
+                {targetCharacterName}是{selectedCharName}的什么？ *
               </label>
               <input
                 type="text"
@@ -210,12 +292,12 @@ export default function RelationshipDialog({
           </div>
         )}
 
-        {/* Step 3: 确认 */}
-        {step === 3 && (
+        {/* Step 4: 确认 */}
+        {step === 4 && (
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-center space-y-3">
-                <p className="text-sm text-gray-600">你的身份：</p>
+                <p className="text-sm text-gray-600">{selectedCharName}的身份：</p>
                 <p className="text-lg font-bold text-indigo-600">{fromRole}</p>
 
                 <div className="flex items-center gap-2 justify-center text-gray-400">
@@ -235,7 +317,7 @@ export default function RelationshipDialog({
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 font-semibold transition"
               >
                 修改
