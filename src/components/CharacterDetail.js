@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/providers";
+import RelationshipDialog from "./RelationshipDialog";
+import RelationshipGraph from "./RelationshipGraph";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted }) {
   const { user } = useAuth();
@@ -12,6 +14,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [relations, setRelations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [showRelationDialog, setShowRelationDialog] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: "",
     tagline: "",
@@ -178,6 +181,30 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
     } catch (err) {
       alert("删除失败：" + err.message);
       console.error("Delete error:", err);
+    }
+  };
+
+  const handleRelationshipSubmit = async (relationshipData) => {
+    try {
+      const { error } = await supabase
+        .from("character_relationship_requests")
+        .insert([
+          {
+            from_character_id: user.id, // 这里应该是当前用户的某个角色，实际需要调整
+            to_character_id: character.id,
+            from_role: relationshipData.from_role,
+            to_role: relationshipData.to_role,
+            status: "pending",
+          },
+        ]);
+
+      if (error) throw error;
+
+      alert("关系申请已发送！");
+      setShowRelationDialog(false);
+    } catch (err) {
+      alert("发送失败：" + err.message);
+      console.error("Relationship error:", err);
     }
   };
 
@@ -360,8 +387,24 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           >
             ✏️ 编辑
           </button>
+
+          {/* Connect 按钮 */}
+          <button
+            onClick={() => setShowRelationDialog(true)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0"
+          >
+            🔗 Connect
+          </button>
         </div>
       </div>
+
+      {/* 关系对话框 */}
+      <RelationshipDialog
+        isOpen={showRelationDialog}
+        onClose={() => setShowRelationDialog(false)}
+        onSubmit={handleRelationshipSubmit}
+        targetCharacterName={character.name}
+      />
 
       {/* 内容区 */}
       <div className="p-6 space-y-8 max-w-4xl">
@@ -479,41 +522,13 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           )}
         </div>
 
-        {/* 关系档案预览 */}
+        {/* 关系图谱 */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">关系档案</h2>
-            {relations.length > 0 && (
-              <button className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold">
-                查看全部 →
-              </button>
-            )}
-          </div>
-
-          {relations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {relations.map((relation) => (
-                <div
-                  key={relation.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🔗</span>
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        关系: {relation.relation_type}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        角色 ID: {relation.related_character_id}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">暂无关系记录</p>
-          )}
+          <RelationshipGraph
+            characterId={character.id}
+            characterName={character.name}
+            characterAvatar={character.avatar_url}
+          />
         </div>
       </div>
     </div>
