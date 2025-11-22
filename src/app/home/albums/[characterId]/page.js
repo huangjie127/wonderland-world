@@ -16,6 +16,8 @@ export default function AlbumDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingDesc, setEditingDesc] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +98,7 @@ export default function AlbumDetailPage() {
             {
               character_id: character.id,
               image_url: imageUrl,
+              description: filePreviews[i]?.description || "",
             },
           ]);
 
@@ -136,6 +139,32 @@ export default function AlbumDetailPage() {
       setAlbums((prev) => prev.filter((a) => a.id !== albumId));
     } catch (err) {
       alert("删除失败：" + err.message);
+    }
+  };
+
+  const handleEditDescription = (album) => {
+    setEditingId(album.id);
+    setEditingDesc(album.description || "");
+  };
+
+  const handleSaveDescription = async (albumId) => {
+    try {
+      const { error } = await supabase
+        .from("character_albums")
+        .update({ description: editingDesc })
+        .eq("id", albumId);
+
+      if (error) throw error;
+
+      setAlbums((prev) =>
+        prev.map((a) =>
+          a.id === albumId ? { ...a, description: editingDesc } : a
+        )
+      );
+      setEditingId(null);
+      setEditingDesc("");
+    } catch (err) {
+      alert("保存失败：" + err.message);
     }
   };
 
@@ -206,21 +235,34 @@ export default function AlbumDetailPage() {
               <p className="font-semibold mb-4">预览（{filePreviews.length}张）</p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filePreviews.map((item, idx) => (
-                  <div key={idx} className="relative group">
-                    <img
-                      src={item.preview}
-                      alt="Preview"
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => {
-                        setFilePreviews((prev) => prev.filter((_, i) => i !== idx));
-                        setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+                  <div key={idx} className="space-y-2">
+                    <div className="relative group">
+                      <img
+                        src={item.preview}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => {
+                          setFilePreviews((prev) => prev.filter((_, i) => i !== idx));
+                          setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="添加描述..."
+                      value={item.description}
+                      onChange={(e) => {
+                        const newPreviews = [...filePreviews];
+                        newPreviews[idx].description = e.target.value;
+                        setFilePreviews(newPreviews);
                       }}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                    >
-                      ✕
-                    </button>
+                      className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
                   </div>
                 ))}
               </div>
@@ -263,9 +305,50 @@ export default function AlbumDetailPage() {
                   </div>
 
                   <div className="p-4">
-                    <p className="text-sm text-gray-500">
-                      {new Date(album.created_at).toLocaleDateString("zh-CN")}
-                    </p>
+                    {editingId === album.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingDesc}
+                          onChange={(e) => setEditingDesc(e.target.value)}
+                          placeholder="输入描述..."
+                          className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                          rows="3"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveDescription(album.id)}
+                            className="flex-1 text-sm bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 transition"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="flex-1 text-sm bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400 transition"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        {album.description ? (
+                          <p className="text-sm text-gray-700 mb-2 line-clamp-2">{album.description}</p>
+                        ) : (
+                          <p className="text-sm text-gray-400 mb-2 italic">暂无描述</p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-500">
+                            {new Date(album.created_at).toLocaleDateString("zh-CN")}
+                          </p>
+                          <button
+                            onClick={() => handleEditDescription(album)}
+                            className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold"
+                          >
+                            编辑
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
