@@ -25,6 +25,36 @@
 .meet-subtitle {
   color: #888;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.character-selector {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  margin: 0 5px;
+}
+
+.character-selector:hover {
+  border-color: #666;
+}
+
+.divider {
+  color: #444;
+  margin: 0 5px;
+}
+
+.no-char-text {
+  color: #ff4444;
+  font-weight: bold;
 }
 
 .world-grid {
