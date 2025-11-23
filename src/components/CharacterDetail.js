@@ -8,7 +8,6 @@ import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
 import AddEventDialog from "./AddEventDialog";
 import InteractionDialog from "./InteractionDialog";
-import EventDetailDialog from "./EventDetailDialog";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
@@ -21,7 +20,6 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [showRelationDialog, setShowRelationDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null); // 用于详情弹窗
   const [activeTab, setActiveTab] = useState("events"); // events | interactions
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -496,10 +494,10 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                   if (type === "timeline") emoji = "⏰";
 
                   return (
-                    <div 
-                      key={event.id} 
-                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer group"
-                      onClick={() => setSelectedEvent(event)}
+                    <Link
+                      key={event.id}
+                      href={`/events/${event.id}`}
+                      className="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition group"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
@@ -514,10 +512,10 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                       </p>
                       {rawContent.length > 30 && (
                         <p className="text-xs text-indigo-500 mt-2 font-medium">
-                          查看完整内容 & 评论 →
+                          查看完整内容 →
                         </p>
                       )}
-                    </div>
+                    </Link>
                   );
                 })
               ) : (
@@ -681,14 +679,6 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           setShowInteractionDialog(false);
           fetchData(); // 刷新数据
         }}
-      />
-
-      {/* 事件详情弹窗 */}
-      <EventDetailDialog
-        isOpen={!!selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-        event={selectedEvent}
-        characterName={character.name}
       />
     </div>
   );
