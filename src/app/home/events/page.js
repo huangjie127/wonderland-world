@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/providers";
 import Link from "next/link";
 import AddEventDialog from "@/components/AddEventDialog";
 
-export default function EventsPage() {
+function EventsContent() {
   const searchParams = useSearchParams();
   const characterId = searchParams.get("characterId");
   const router = useRouter();
@@ -242,5 +242,13 @@ export default function EventsPage() {
             }}
         />
     </div>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">加载中...</div>}>
+      <EventsContent />
+    </Suspense>
   );
 }
