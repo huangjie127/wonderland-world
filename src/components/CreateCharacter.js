@@ -118,7 +118,7 @@ export default function CreateCharacter({ onCreated }) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h2 className="text-2xl font-bold mb-6">创建新角色</h2>
 
         {error && (
@@ -135,7 +135,7 @@ export default function CreateCharacter({ onCreated }) {
               <img
                 src={formData.avatarPreview}
                 alt="Preview"
-                className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                className="w-32 h-32 object-cover rounded border border-gray-200"
               />
             )}
             <div className="flex-1">
@@ -145,10 +145,10 @@ export default function CreateCharacter({ onCreated }) {
                 onChange={handleAvatarChange}
                 className="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
+                  file:rounded file:border file:border-gray-300
                   file:text-sm file:font-semibold
-                  file:bg-indigo-50 file:text-indigo-700
-                  hover:file:bg-indigo-100"
+                  file:bg-white file:text-gray-700
+                  hover:file:bg-gray-50"
               />
               <p className="text-xs text-gray-500 mt-1">推荐尺寸: 400x400px, 最大 5MB</p>
             </div>
@@ -165,7 +165,7 @@ export default function CreateCharacter({ onCreated }) {
             onChange={handleInputChange}
             placeholder="输入角色名称"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -178,7 +178,7 @@ export default function CreateCharacter({ onCreated }) {
             value={formData.tagline}
             onChange={handleInputChange}
             placeholder="一句话简介"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -191,7 +191,7 @@ export default function CreateCharacter({ onCreated }) {
             onChange={handleInputChange}
             placeholder="详细描述角色信息"
             rows="4"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -199,7 +199,7 @@ export default function CreateCharacter({ onCreated }) {
         <button
           type="submit"
           disabled={loading || uploading}
-          className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+          className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors btn-feedback"
         >
           {uploading ? "上传头像中..." : loading ? "创建中..." : "创建角色"}
         </button>

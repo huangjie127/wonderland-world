@@ -156,7 +156,7 @@ export default function RelationshipNotifications({ isOpen, onClose, onUpdate })
               {requests.map((req) => (
                 <div
                   key={req.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                  className="border-b border-gray-100 last:border-0 pb-4 mb-4 last:mb-0"
                 >
                   {/* 请求信息 */}
                   <div className="flex items-center gap-4 mb-4">

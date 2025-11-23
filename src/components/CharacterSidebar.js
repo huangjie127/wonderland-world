@@ -71,14 +71,14 @@ export default function CharacterSidebar({
               <button
                 key={character.id}
                 onClick={() => onSelectCharacter(character.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${
+                className={`w-full flex items-center gap-3 p-3 transition-colors border-l-2 ${
                   selectedCharacterId === character.id
-                    ? "bg-indigo-100 border-l-4 border-indigo-600"
-                    : "hover:bg-gray-100"
+                    ? "bg-indigo-50 border-indigo-600"
+                    : "border-transparent hover:bg-gray-50"
                 }`}
               >
                 {/* 头像 */}
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-300">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
                   {character.avatar_url ? (
                     <img
                       src={character.avatar_url}

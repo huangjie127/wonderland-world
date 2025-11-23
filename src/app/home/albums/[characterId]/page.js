@@ -212,7 +212,7 @@ export default function AlbumDetailPage() {
       {/* 内容区 */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* 上传区域 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">上传新照片</h2>
 
           {/* 拖拽上传 */}
@@ -286,7 +286,7 @@ export default function AlbumDetailPage() {
               {albums.map((album) => (
                 <div
                   key={album.id}
-                  className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition group"
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-indigo-300 transition group"
                 >
                   <div className="aspect-video bg-gray-200 overflow-hidden relative">
                     <img

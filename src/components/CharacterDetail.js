@@ -43,7 +43,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           .select("*")
           .eq("character_id", character.id)
           .order("created_at", { ascending: false })
-          .limit(20),
+          .limit(3),
         supabase
           .from("character_interactions")
           .select(`
@@ -264,7 +264,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                   <img
                     src={editFormData.avatarPreview}
                     alt="Preview"
-                    className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                    className="w-32 h-32 object-cover rounded border border-gray-200"
                   />
                 )}
                 <div className="flex-1">
@@ -274,10 +274,10 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                     onChange={handleAvatarChange}
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
-                      file:rounded-full file:border-0
+                      file:rounded file:border file:border-gray-300
                       file:text-sm file:font-semibold
-                      file:bg-indigo-50 file:text-indigo-700
-                      hover:file:bg-indigo-100"
+                      file:bg-white file:text-gray-700
+                      hover:file:bg-gray-50"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     留空保持原头像，选择新文件替换
@@ -296,7 +296,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                 name="name"
                 value={editFormData.name}
                 onChange={handleEditInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -311,7 +311,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                 value={editFormData.tagline}
                 onChange={handleEditInputChange}
                 placeholder="一句话简介"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -326,7 +326,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                 onChange={handleEditInputChange}
                 placeholder="详细描述角色信息"
                 rows="6"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -335,19 +335,19 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
               <button
                 onClick={handleSaveEdit}
                 disabled={saving}
-                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 font-semibold transition"
+                className="flex-1 bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 font-semibold transition"
               >
                 {saving ? "保存中..." : "保存更改"}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
-                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 font-semibold transition"
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300 font-semibold transition"
               >
                 取消
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold transition"
               >
                 🗑️ 删除
               </button>
@@ -365,7 +365,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
         <div className="flex gap-6 items-start">
           {/* 头像 */}
-          <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 border-4 border-white shadow-lg">
+          <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 border-4 border-white/30">
             {character.avatar_url ? (
               <img
                 src={character.avatar_url}
@@ -454,14 +454,6 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             </div>
             
             <div>
-              {activeTab === "events" && character.user_id === user?.id && (
-                <button
-                  onClick={() => setShowAddEventDialog(true)}
-                  className="text-sm px-3 py-1 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 font-semibold"
-                >
-                  📝 记录新事件
-                </button>
-              )}
               {activeTab === "interactions" && (
                 <button
                   onClick={() => setShowInteractionDialog(true)}
@@ -475,59 +467,64 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
           {/* 个人事件列表 */}
           {activeTab === "events" && (
-            <div className="space-y-3">
+            <div className="mt-2">
               {selfEvents.length > 0 ? (
-                selfEvents.map((event) => {
-                  // 提取类型和内容
-                  const typeMatch = event.content.match(/^\[(.*?)\]/);
-                  const type = typeMatch ? typeMatch[1] : "记录";
-                  const rawContent = event.content.replace(/^\[.*?\]\s*/, "");
-                  const previewContent = rawContent.length > 30 
-                    ? rawContent.substring(0, 30) + "..." 
-                    : rawContent;
+                <>
+                  {selfEvents.map((event) => {
+                    // 提取类型和内容
+                    const typeMatch = event.content.match(/^\[(.*?)\]/);
+                    const type = typeMatch ? typeMatch[1] : "记录";
+                    const rawContent = event.content.replace(/^\[.*?\]\s*/, "");
+                    // 优先使用 title，否则截取内容
+                    const title = event.title || (rawContent.length > 20 
+                      ? rawContent.substring(0, 20) + "..." 
+                      : rawContent);
 
-                  // 根据类型选择 emoji
-                  let emoji = "📘";
-                  if (type === "worldview") emoji = "🌍";
-                  if (type === "story") emoji = "📖";
-                  if (type === "mood") emoji = "📝";
-                  if (type === "timeline") emoji = "⏰";
+                    // 根据类型选择 emoji
+                    let emoji = "📘";
+                    if (type === "worldview") emoji = "🌍";
+                    if (type === "story") emoji = "📖";
+                    if (type === "mood") emoji = "📝";
+                    if (type === "timeline") emoji = "⏰";
 
-                  return (
-                    <Link
-                      key={event.id}
-                      href={`/events/${event.id}`}
-                      className="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition group"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                          {emoji} {type}
-                        </span>
-                        <span className="text-xs text-gray-400">
+                    return (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 group hover:bg-gray-50 rounded px-2 -mx-2 transition-all duration-200 hover:scale-[1.01]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-lg leading-none flex-shrink-0 opacity-80" title={type}>{emoji}</span>
+                          <span className="text-sm text-gray-700 truncate group-hover:text-indigo-600 transition-colors">
+                            {title}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 flex-shrink-0 ml-4 font-mono">
                           {new Date(event.created_at).toLocaleDateString("zh-CN")}
                         </span>
                       </div>
-                      <p className="text-gray-700 text-sm leading-relaxed group-hover:text-indigo-700 transition">
-                        {previewContent}
-                      </p>
-                      {rawContent.length > 30 && (
-                        <p className="text-xs text-indigo-500 mt-2 font-medium">
-                          查看完整内容 →
-                        </p>
-                      )}
-                    </Link>
-                  );
-                })
+                    );
+                  })}
+                  {character.user_id === user?.id && (
+                    <div className="text-center pt-2">
+                      <Link 
+                        href={`/home/events?characterId=${character.id}`}
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        点击查看更多
+                      </Link>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                   <p className="text-gray-500 text-sm">暂无个人事件记录</p>
                   {character.user_id === user?.id && (
-                    <button 
-                      onClick={() => setShowAddEventDialog(true)}
-                      className="mt-2 text-indigo-600 text-sm font-semibold hover:underline"
+                    <Link 
+                      href={`/home/events?characterId=${character.id}`}
+                      className="mt-2 inline-block text-indigo-600 text-sm font-semibold hover:underline"
                     >
-                      添加第一条记录
-                    </button>
+                      前往事件簿添加记录
+                    </Link>
                   )}
                 </div>
               )}
@@ -536,51 +533,51 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
           {/* 访客留言板 */}
           {activeTab === "interactions" && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-[500px] overflow-y-auto">
+            <div className="mt-2 max-h-[500px] overflow-y-auto">
               {interactions.length > 0 ? (
-                <div className="space-y-4">
+                <div className="">
                   {interactions.map((interaction) => (
-                    <div key={interaction.id} className="flex gap-3">
+                    <div key={interaction.id} className="flex gap-3 py-3 border-b border-gray-100 last:border-0 group hover:bg-gray-50 px-2 -mx-2 rounded transition-all duration-200 hover:scale-[1.01]">
                       {/* 访客头像 */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 pt-1">
                         {interaction.guest?.avatar_url ? (
                           <img 
                             src={interaction.guest.avatar_url} 
                             alt={interaction.guest.name}
-                            className="w-10 h-10 rounded-full object-cover border border-gray-300"
+                            className="w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg border border-purple-200">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400">
                             👤
                           </div>
                         )}
                       </div>
                       
-                      {/* 留言气泡 */}
-                      <div className="flex-1">
-                        <div className="flex items-baseline gap-2 mb-1">
-                          <span className="font-bold text-sm text-gray-800">
+                      {/* 留言内容 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between mb-1">
+                          <span className="font-medium text-sm text-gray-900 truncate">
                             {interaction.guest?.name || "未知访客"}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 font-mono flex-shrink-0 ml-2">
                             {new Date(interaction.created_at).toLocaleString("zh-CN", {
                               month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
                             })}
                           </span>
                         </div>
-                        <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-200 text-sm text-gray-700 leading-relaxed">
+                        <p className="text-sm text-gray-600 leading-relaxed break-words">
                           {interaction.content}
-                        </div>
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
+                <div className="text-center py-12 border border-dashed border-gray-200 rounded-lg bg-gray-50">
                   <p className="text-gray-400 text-sm mb-2">还没有人来留言...</p>
                   <button
                     onClick={() => setShowInteractionDialog(true)}
-                    className="text-purple-600 font-semibold text-sm hover:underline"
+                    className="text-indigo-600 font-semibold text-sm hover:underline"
                   >
                     成为第一个访客
                   </button>

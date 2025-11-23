@@ -70,7 +70,10 @@ export default function EventViewPage() {
       <div className="max-w-4xl mx-auto">
         {/* 导航 */}
         <div className="mb-6 flex items-center justify-between">
-          <Link href="/home/events" className="text-blue-400 hover:underline">
+          <Link 
+            href={`/home/events?characterId=${character?.id}`} 
+            className="text-blue-400 hover:underline"
+          >
             ← 返回事件列表
           </Link>
           {isOwner && (
@@ -87,6 +90,9 @@ export default function EventViewPage() {
         <div className="bg-gray-800 rounded-lg p-8 shadow-xl">
           {/* 角色信息 */}
           <div className="mb-6 pb-4 border-b border-gray-700">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {event.title || "无标题事件"}
+            </h1>
             <p className="text-sm text-gray-400">
               事件所属角色: <span className="text-white font-semibold">{character?.name}</span>
             </p>
