@@ -69,6 +69,8 @@ export default function MeetLobby() {
 
   const fetchWorlds = async () => {
     setLoading(true);
+    // 修改：移除客户端时间过滤，完全信任服务器的 status 状态
+    // 避免因客户端时间不准导致看不到服务器端仍然活跃的房间
     const { data } = await supabase
       .from('meet_rooms')
       .select(`
@@ -76,10 +78,10 @@ export default function MeetLobby() {
         meet_participants (count)
       `)
       .eq('status', 'active')
-      .gt('collapse_at', new Date().toISOString()) // 只显示未过期的
       .order('created_at', { ascending: false });
 
     if (data) {
+      console.log("Fetched worlds:", data);
       const formatted = data.map(w => ({
         ...w,
         playerCount: w.meet_participants[0]?.count || 0,
