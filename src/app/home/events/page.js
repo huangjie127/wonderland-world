@@ -116,9 +116,12 @@ function EventsContent() {
   if (!character) return <div className="p-8 text-center">未找到角色</div>;
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
         {/* Left Sidebar: Navigation */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm z-10">
+        <div className={`
+            w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm z-10
+            ${selectedEvent ? 'hidden md:flex' : 'flex'}
+        `}>
             <div className="p-6 border-b border-gray-200 bg-gray-50">
                 <Link href="/home" className="text-sm text-gray-500 hover:text-gray-700 mb-4 block font-medium">
                     ← 返回主页
@@ -177,10 +180,21 @@ function EventsContent() {
         </div>
 
         {/* Right Content: Event Detail */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+        <div className={`
+            flex-1 flex flex-col h-full overflow-hidden bg-white
+            ${selectedEvent ? 'flex' : 'hidden md:flex'}
+        `}>
             {selectedEvent ? (
-                <div className="flex-1 overflow-y-auto p-8 md:p-12">
+                <div className="flex-1 overflow-y-auto p-4 md:p-12">
                     <div className="max-w-3xl mx-auto">
+                        {/* Mobile Back Button */}
+                        <button 
+                            onClick={() => setSelectedEvent(null)}
+                            className="md:hidden mb-4 text-indigo-600 font-semibold flex items-center gap-1"
+                        >
+                            ← 返回列表
+                        </button>
+
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className="text-sm text-gray-500 font-medium">

@@ -16,6 +16,7 @@ export default function MeetRoom() {
   const [chatInput, setChatInput] = useState('');
   const [actionInput, setActionInput] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
+  const [showSidebar, setShowSidebar] = useState(false); // Mobile sidebar toggle
 
   const chatEndRef = useRef(null);
 
@@ -162,7 +163,7 @@ export default function MeetRoom() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-gray-300 font-serif relative overflow-hidden flex">
+    <div className="min-h-screen bg-[#0a0b10] text-gray-300 font-serif relative overflow-hidden flex flex-col md:flex-row">
       <ParticleBackground />
       
       {/* Ambient Background Effects */}
@@ -171,9 +172,31 @@ export default function MeetRoom() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-900/5 rounded-full blur-[100px]"></div>
       </div>
 
+      {/* Mobile Header / Toggle */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button 
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="p-2 bg-[#0f1016]/90 border border-gray-700 rounded-lg text-gray-300 shadow-lg backdrop-blur-md"
+        >
+          {showSidebar ? '✕' : '☰ 菜单'}
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Left Sidebar: World Info & Guide */}
-      <div className="w-80 bg-[#0f1016]/80 backdrop-blur-md border-r border-gray-800/50 flex flex-col relative z-10">
-        <div className="p-6 border-b border-gray-800/50">
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-80 bg-[#0f1016]/95 backdrop-blur-xl border-r border-gray-800/50 flex flex-col transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0 md:bg-[#0f1016]/80 md:backdrop-blur-md
+        ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-gray-800/50 pt-16 md:pt-6">
           <h2 className="text-xl font-light text-gray-100 mb-2 tracking-widest">{room.title}</h2>
           <div className="flex items-center gap-2 text-red-400/80 text-sm font-mono mb-4">
             <span className="animate-pulse">●</span>
@@ -247,9 +270,9 @@ export default function MeetRoom() {
       </div>
 
       {/* Main Stage: Chat & Interaction */}
-      <div className="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-transparent to-[#0a0b10]/80">
+      <div className="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-transparent to-[#0a0b10]/80 h-[100dvh] md:h-auto">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent pt-16 md:pt-8">
           {messages.map((msg, idx) => {
             const isMe = msg.character_id === myCharacter?.id;
             return (
@@ -292,13 +315,13 @@ export default function MeetRoom() {
         </div>
 
         {/* Input Area */}
-        <div className="p-6 bg-[#0f1016]/90 border-t border-gray-800/50 backdrop-blur-md">
+        <div className="p-4 md:p-6 bg-[#0f1016]/90 border-t border-gray-800/50 backdrop-blur-md pb-safe">
           <div className="max-w-4xl mx-auto flex flex-col gap-3">
             {/* Chat Input */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <input 
                 type="text" 
-                className="flex-1 bg-[#1a1b26] border border-gray-700 rounded px-4 py-3 text-gray-200 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all"
+                className="flex-1 bg-[#1a1b26] border border-gray-700 rounded px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-200 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all"
                 placeholder="说点什么..."
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
@@ -306,20 +329,20 @@ export default function MeetRoom() {
               />
               <button 
                 onClick={() => handleSend('chat')}
-                className="px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded transition-colors uppercase text-xs tracking-widest"
+                className="px-4 md:px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded transition-colors uppercase text-xs tracking-widest whitespace-nowrap"
               >
                 发送
               </button>
             </div>
 
             {/* Action Input */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <div className="flex-1 relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs uppercase tracking-wider">行动 |</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] md:text-xs uppercase tracking-wider">行动 |</span>
                 <input 
                   type="text" 
-                  className="w-full bg-[#1a1b26]/50 border border-gray-800 rounded px-4 py-2 pl-16 text-sm text-gray-400 placeholder-gray-700 focus:border-gray-600 outline-none transition-all italic"
-                  placeholder="描述你的动作 (例如: 环顾四周，叹了口气...)"
+                  className="w-full bg-[#1a1b26]/50 border border-gray-800 rounded px-3 py-2 pl-12 md:pl-16 text-xs md:text-sm text-gray-400 placeholder-gray-700 focus:border-gray-600 outline-none transition-all italic"
+                  placeholder="描述动作..."
                   value={actionInput}
                   onChange={e => setActionInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSend('action')}
@@ -327,7 +350,7 @@ export default function MeetRoom() {
               </div>
               <button 
                 onClick={() => handleSend('action')}
-                className="px-6 bg-transparent hover:bg-gray-800 text-gray-500 border border-gray-800 rounded transition-colors uppercase text-xs tracking-widest"
+                className="px-4 md:px-6 bg-transparent hover:bg-gray-800 text-gray-500 border border-gray-800 rounded transition-colors uppercase text-xs tracking-widest whitespace-nowrap"
               >
                 执行
               </button>
