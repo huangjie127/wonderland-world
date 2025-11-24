@@ -58,27 +58,36 @@ export default function RichTextEditor({ content, onChange }) {
     try {
       // 生成唯一文件名
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `events/${fileName}`;
+      const fileName = `events/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      // 上传到 Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('event-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // 1. 获取预签名 URL
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: fileName,
+          contentType: file.type,
+        }),
+      });
 
-      if (error) {
-        console.error('Upload error:', error);
-        alert('上传失败: ' + error.message);
-        return;
+      if (!uploadRes.ok) {
+        throw new Error("Failed to get upload URL");
       }
 
-      // 获取公开访问 URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-images')
-        .getPublicUrl(filePath);
+      const { uploadUrl, publicUrl } = await uploadRes.json();
+
+      // 2. 上传文件到 R2
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!putRes.ok) {
+        throw new Error("Failed to upload image to R2");
+      }
 
       // 插入图片到编辑器
       editor?.chain().focus().setImage({ src: publicUrl }).run();

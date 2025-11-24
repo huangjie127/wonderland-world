@@ -74,25 +74,38 @@ export default function CreateCharacter({ onCreated }) {
     try {
       let avatarUrl = null;
 
-      // 上传头像到 Storage
+      // 上传头像到 R2
       if (formData.avatar) {
         setUploading(true);
-        const fileExt = formData.avatar.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, formData.avatar, {
-            upsert: false,
+        
+        // 1. 获取预签名 URL
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: formData.avatar.name,
             contentType: formData.avatar.type,
-          });
+          }),
+        });
 
-        if (uploadError) throw uploadError;
+        if (!response.ok) {
+          throw new Error("Failed to get upload URL");
+        }
 
-        // 获取公开 URL
-        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-        avatarUrl = data?.publicUrl;
+        const { uploadUrl, publicUrl } = await response.json();
+
+        // 2. 直接上传到 R2
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": formData.avatar.type },
+          body: formData.avatar,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        avatarUrl = publicUrl;
         setUploading(false);
       }
 

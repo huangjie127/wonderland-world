@@ -139,21 +139,40 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
       // 上传新头像（如果选择了）
       if (editFormData.avatar) {
-        const fileExt = editFormData.avatar.name.split(".").pop();
+        const file = editFormData.avatar;
+        const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
+        
+        // 1. 获取预签名 URL
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: fileName,
+            contentType: file.type,
+          }),
+        });
 
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, editFormData.avatar, {
-            upsert: false,
-            contentType: editFormData.avatar.type,
-          });
+        if (!uploadRes.ok) {
+          throw new Error("Failed to get upload URL");
+        }
 
-        if (uploadError) throw uploadError;
+        const { uploadUrl, publicUrl } = await uploadRes.json();
 
-        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-        newAvatarUrl = data?.publicUrl;
+        // 2. 上传文件到 R2
+        const putRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type,
+          },
+          body: file,
+        });
+
+        if (!putRes.ok) {
+          throw new Error("Failed to upload image to R2");
+        }
+
+        newAvatarUrl = publicUrl;
       }
 
       // 更新角色信息
