@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import Link from 'next/link';
-import './room.css'; // 确保创建这个 CSS 文件
+import ParticleBackground from '@/components/meet/ParticleBackground';
 
 export default function MeetRoom() {
   const { id: roomId } = useParams();
@@ -70,13 +69,11 @@ export default function MeetRoom() {
     initRoom();
 
     // 2. 实时订阅
-    console.log("Subscribing to room:", roomId);
     const channel = supabase
       .channel(`room-${roomId}`)
       // 监听新消息
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meet_messages', filter: `room_id=eq.${roomId}` }, 
         async (payload) => {
-          console.log("New message received:", payload);
           const { data: char } = await supabase.from('characters').select('name, avatar_url').eq('id', payload.new.character_id).single();
           setMessages(prev => [...prev, { ...payload.new, characters: char }]);
         }
@@ -107,7 +104,7 @@ export default function MeetRoom() {
       supabase.removeChannel(channel);
       clearInterval(timer);
     };
-  }, [roomId, room?.collapse_at]); // 依赖 room.collapse_at 确保计时器准确
+  }, [roomId, room?.collapse_at]);
 
   const fetchParticipants = async () => {
     const { data } = await supabase
@@ -130,7 +127,6 @@ export default function MeetRoom() {
     if (!content.trim()) return;
     
     if (!myCharacter) {
-      console.error("No active character found");
       alert("未找到当前角色，请重新登录或选择角色");
       return;
     }
@@ -143,7 +139,6 @@ export default function MeetRoom() {
     }]);
 
     if (error) {
-      console.error("Error sending message:", error);
       alert(`发送失败: ${error.message}`);
     } else {
       if (type === 'chat') setChatInput('');
@@ -160,105 +155,185 @@ export default function MeetRoom() {
     }
   };
 
-  if (!room) return <div className="loading-screen">正在进入世界...</div>;
+  if (!room) return (
+    <div className="min-h-screen bg-[#0a0b10] flex items-center justify-center text-gray-400 font-serif tracking-widest">
+      <div className="animate-pulse">正在同步位面数据...</div>
+    </div>
+  );
 
   return (
-    <div className="world-room-container">
-      {/* 左栏：世界信息 */}
-      <div className="world-sidebar">
-        <div className="world-info-card">
-          <h2>{room.title}</h2>
-          <div className="collapse-timer">
-            <span>💥 坍塌倒计时</span>
-            <div className="timer-digits">{timeLeft}</div>
+    <div className="min-h-screen bg-[#0a0b10] text-gray-300 font-serif relative overflow-hidden flex">
+      <ParticleBackground />
+      
+      {/* Ambient Background Effects */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-900/5 rounded-full blur-[100px]"></div>
+      </div>
+
+      {/* Left Sidebar: World Info & Guide */}
+      <div className="w-80 bg-[#0f1016]/80 backdrop-blur-md border-r border-gray-800/50 flex flex-col relative z-10">
+        <div className="p-6 border-b border-gray-800/50">
+          <h2 className="text-xl font-light text-gray-100 mb-2 tracking-widest">{room.title}</h2>
+          <div className="flex items-center gap-2 text-red-400/80 text-sm font-mono mb-4">
+            <span className="animate-pulse">●</span>
+            <span>坍塌倒计时: {timeLeft}</span>
           </div>
-          <p className="world-desc-text">{room.scene_description}</p>
+          <p className="text-sm text-gray-500 leading-relaxed italic border-l-2 border-gray-700 pl-3">
+            {room.scene_description}
+          </p>
         </div>
 
-        <div className="participant-list">
-          <h3>在线冒险者 ({participants.length})</h3>
-          <div className="avatar-grid">
-            {participants.map(p => (
-              <div key={p.id} className="participant-item" title={p.name}>
-                <div className="avatar-circle">
-                  {p.avatar_url ? <img src={p.avatar_url} /> : p.name[0]}
-                </div>
-                <span className="participant-name">{p.name}</span>
-              </div>
-            ))}
+        {/* Guide / Tips Section */}
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="bg-[#1a1b26]/50 border border-gray-800 rounded p-4 mb-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">行动指南</h3>
+            <ul className="space-y-3 text-sm text-gray-500">
+              <li className="flex gap-2">
+                <span className="text-blue-500">♦</span>
+                <span><strong className="text-gray-400">扮演:</strong> 沉浸在你的角色中，用它的语气说话。</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-500">♦</span>
+                <span><strong className="text-gray-400">互动:</strong> 观察其他灵魂，对他们的行为做出反应。</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-gray-500">♦</span>
+                <span><strong className="text-gray-400">探索:</strong> 使用"行动"描述你在场景中的动作。</span>
+              </li>
+            </ul>
           </div>
+
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">在线灵魂 ({participants.length})</h3>
+            <div className="grid grid-cols-4 gap-2">
+              {participants.map(p => (
+                <div key={p.id} className="group relative" title={p.name}>
+                  <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 overflow-hidden group-hover:border-blue-500 transition-colors">
+                    {p.avatar_url ? (
+                      <img src={p.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">{p.name[0]}</div>
+                    )}
+                  </div>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-xs text-gray-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    {p.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-800/50 bg-[#0a0b10]/50">
+          {myCharacter && (
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-600 overflow-hidden">
+                {myCharacter.avatar_url ? <img src={myCharacter.avatar_url} className="w-full h-full object-cover" /> : null}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-gray-300 truncate">{myCharacter.name}</div>
+                <div className="text-xs text-gray-600">当前化身</div>
+              </div>
+            </div>
+          )}
+          <button 
+            onClick={handleLeave}
+            className="w-full py-2 border border-red-900/30 text-red-500/70 text-xs tracking-widest hover:bg-red-900/10 hover:text-red-400 transition-colors uppercase"
+          >
+            离开位面
+          </button>
         </div>
       </div>
 
-      {/* 中栏：互动区 */}
-      <div className="world-main-stage">
-        <div className="messages-feed">
-          {messages.map(msg => (
-            <div key={msg.id} className="message-row">
-              {msg.type === 'chat' ? (
-                // 聊天样式 (白底气泡 + 头像)
-                <div className="chat-bubble-container">
-                  <div className="msg-avatar-small">
-                    {msg.characters?.avatar_url ? 
-                      <img src={msg.characters.avatar_url} alt={msg.characters.name} /> : 
-                      msg.characters?.name[0]
-                    }
+      {/* Main Stage: Chat & Interaction */}
+      <div className="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-transparent to-[#0a0b10]/80">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+          {messages.map((msg, idx) => {
+            const isMe = msg.character_id === myCharacter?.id;
+            return (
+              <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : ''} group animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+                {/* Avatar */}
+                <div className="flex-shrink-0 mt-1">
+                  <div className={`w-10 h-10 rounded-full border ${isMe ? 'border-blue-900/50' : 'border-gray-700'} bg-[#1a1b26] overflow-hidden shadow-lg`}>
+                    {msg.characters?.avatar_url ? (
+                      <img src={msg.characters.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">{msg.characters?.name?.[0]}</div>
+                    )}
                   </div>
-                  <div className="chat-content-wrapper">
-                    <div className="msg-sender">{msg.characters?.name}</div>
-                    <div className="chat-bubble">
+                </div>
+
+                {/* Content */}
+                <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                  <span className="text-xs text-gray-600 mb-1 px-1">{msg.characters?.name}</span>
+                  
+                  {msg.type === 'chat' ? (
+                    <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-lg backdrop-blur-sm
+                      ${isMe 
+                        ? 'bg-blue-900/20 border border-blue-800/30 text-gray-200 rounded-tr-sm' 
+                        : 'bg-[#1a1b26]/80 border border-gray-700/50 text-gray-300 rounded-tl-sm'
+                      }
+                    `}>
                       {msg.content}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="px-5 py-3 rounded-lg bg-gray-800/30 border border-gray-700/30 text-gray-400 text-sm italic flex items-center gap-2">
+                      <span className="text-yellow-500/50">✨</span>
+                      <span>{msg.content}</span>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                // 行动样式 (灰底卡片 + 斜体)
-                <div className="action-card">
-                  <span className="action-icon">✨</span>
-                  <span className="action-actor">{msg.characters?.name}</span>
-                  <span className="action-content">{msg.content}</span>
-                </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
           <div ref={chatEndRef} />
         </div>
 
-        <div className="interaction-bar">
-          <div className="input-group chat-input-group">
-            <input 
-              type="text" 
-              placeholder="说点什么..." 
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend('chat')}
-            />
-            <button onClick={() => handleSend('chat')}>发送</button>
-          </div>
-          <div className="input-group action-input-group">
-            <input 
-              type="text" 
-              placeholder="描述你的行动 (如: 环顾四周...)" 
-              value={actionInput}
-              onChange={e => setActionInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend('action')}
-            />
-            <button onClick={() => handleSend('action')}>行动</button>
+        {/* Input Area */}
+        <div className="p-6 bg-[#0f1016]/90 border-t border-gray-800/50 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto flex flex-col gap-3">
+            {/* Chat Input */}
+            <div className="flex gap-3">
+              <input 
+                type="text" 
+                className="flex-1 bg-[#1a1b26] border border-gray-700 rounded px-4 py-3 text-gray-200 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all"
+                placeholder="说点什么..."
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSend('chat')}
+              />
+              <button 
+                onClick={() => handleSend('chat')}
+                className="px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded transition-colors uppercase text-xs tracking-widest"
+              >
+                发送
+              </button>
+            </div>
+
+            {/* Action Input */}
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs uppercase tracking-wider">行动 |</span>
+                <input 
+                  type="text" 
+                  className="w-full bg-[#1a1b26]/50 border border-gray-800 rounded px-4 py-2 pl-16 text-sm text-gray-400 placeholder-gray-700 focus:border-gray-600 outline-none transition-all italic"
+                  placeholder="描述你的动作 (例如: 环顾四周，叹了口气...)"
+                  value={actionInput}
+                  onChange={e => setActionInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSend('action')}
+                />
+              </div>
+              <button 
+                onClick={() => handleSend('action')}
+                className="px-6 bg-transparent hover:bg-gray-800 text-gray-500 border border-gray-800 rounded transition-colors uppercase text-xs tracking-widest"
+              >
+                执行
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* 右栏：我的信息 */}
-      <div className="world-user-panel">
-        {myCharacter && (
-          <div className="my-character-card">
-            <div className="my-avatar-large">
-              {myCharacter.avatar_url ? <img src={myCharacter.avatar_url} /> : myCharacter.name[0]}
-            </div>
-            <h3>{myCharacter.name}</h3>
-            <button className="leave-btn" onClick={handleLeave}>离开世界</button>
-          </div>
-        )}
       </div>
     </div>
   );

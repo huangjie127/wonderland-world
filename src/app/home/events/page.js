@@ -181,28 +181,26 @@ function EventsContent() {
             {selectedEvent ? (
                 <div className="flex-1 overflow-y-auto p-8 md:p-12">
                     <div className="max-w-3xl mx-auto">
-                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
-                            <div>
-                                <div className="flex flex-wrap items-center gap-3 mb-3">
-                                    <span className="text-sm text-gray-500 font-medium">
-                                        {new Date(selectedEvent.created_at).toLocaleString("zh-CN", {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span className="text-sm text-gray-500 font-medium">
+                                    {new Date(selectedEvent.created_at).toLocaleString("zh-CN", {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                                {selectedEvent.tags && selectedEvent.tags.map(tag => (
+                                    <span 
+                                        key={tag.id} 
+                                        className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                                        style={{ backgroundColor: tag.color || '#9ca3af' }}
+                                    >
+                                        {tag.name}
                                     </span>
-                                    {selectedEvent.tags && selectedEvent.tags.map(tag => (
-                                        <span 
-                                            key={tag.id} 
-                                            className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                                            style={{ backgroundColor: tag.color || '#9ca3af' }}
-                                        >
-                                            {tag.name}
-                                        </span>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
                             
                             {isOwner && (
@@ -215,11 +213,16 @@ function EventsContent() {
                             )}
                         </div>
 
-                        <div className="prose prose-lg prose-indigo max-w-none">
-                             <div 
-                                className="whitespace-pre-wrap text-gray-800 leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: selectedEvent.rawContent }}
-                             />
+                        <div className="border border-gray-200 rounded-xl p-8 shadow-sm bg-white w-full h-fit transition-all duration-300 hover:shadow-md">
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100">
+                                {selectedEvent.title}
+                            </h1>
+                            <div className="prose prose-lg prose-indigo max-w-none">
+                                 <div 
+                                    className="whitespace-pre-wrap text-gray-700 leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: selectedEvent.rawContent }}
+                                 />
+                            </div>
                         </div>
                     </div>
                 </div>

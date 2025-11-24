@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/app/providers";
 
-export default function RelationshipGraph({ characterId, characterName, characterAvatar, onCharacterSelect }) {
+export default function RelationshipGraph({ characterId, characterName, characterAvatar, onCharacterSelect, isOwner }) {
+  const { user } = useAuth();
   const router = useRouter();
   const canvasRef = useRef(null);
   const [relationships, setRelationships] = useState([]);
@@ -55,7 +57,7 @@ export default function RelationshipGraph({ characterId, characterName, characte
       if (relatedIds.size > 0) {
         const { data: charactersData } = await supabase
           .from("characters")
-          .select("id, name, avatar_url")
+          .select("id, name, avatar_url, user_id")
           .in("id", Array.from(relatedIds));
 
         setRelatedCharacters(charactersData || []);
@@ -525,6 +527,64 @@ export default function RelationshipGraph({ characterId, characterName, characte
               
               if (!otherChar) return null;
 
+              // 检查当前用户是否有权解除关系
+              // 只有当用户是当前角色(characterId)的拥有者时，才能解除关系
+              // 注意：我们需要知道当前角色(characterId)的 user_id，但这个组件只接收了 characterId
+              // 不过，通常只有角色的拥有者才能看到"解除"按钮
+              // 这里我们简单判断：如果当前登录用户拥有 from_character 或 to_character，就有权解除
+              // 但更严格来说，应该是：如果我是 characterId 的拥有者，我可以解除。
+              // 由于我们没有 characterId 的 user_id，我们假设父组件传递的 characterId 对应的角色信息里应该包含 user_id
+              // 或者我们可以从 relatedCharacters 里推断？不，relatedCharacters 是对方。
+              
+              // 让我们换个思路：
+              // 只有当 user.id 匹配关系的某一方的 user_id 时，才显示解除按钮。
+              // 我们已经获取了 otherChar.user_id。
+              // 我们还需要知道 characterId (当前页面角色) 的 user_id。
+              // 既然父组件 CharacterDetail 已经有了 character 对象（包含 user_id），最好把它传进来。
+              // 但为了不改动接口，我们可以假设：如果用户能看到这个页面，且他是关系的当事人，他就可以解除。
+              
+              // 修正逻辑：
+              // 只有当当前登录用户是当前页面角色(characterId)的拥有者时，才显示解除按钮。
+              // 因为这是"我的"关系列表。
+              // 但是我们不知道 characterId 的 owner。
+              
+              // 让我们回退一步，看看 CharacterDetail.js 传了什么。
+              // 它传了 characterId, characterName, characterAvatar。
+              // 我们可以让它多传一个 characterOwnerId。
+              
+              // 既然不想改接口，我们可以再次查询一下当前角色的 user_id，或者...
+              // 其实 relatedCharacters 里包含了对方的信息。
+              // 如果我是 characterId 的拥有者，我应该能解除。
+              // 我们可以简单地判断：如果 user.id === otherChar.user_id，那说明我是对方角色的拥有者？不对。
+              
+              // 让我们假设：只有当用户拥有这段关系中的"自己"这一方时，才能解除。
+              // 在这个视图里，"自己"就是 characterId。
+              // 所以我们需要知道 characterId 的 user_id。
+              
+              // 既然我们已经在 fetchRelationships 里获取了 relatedCharacters，
+              // 我们也可以顺便获取一下 characterId 的 user_id。
+              
+              // 或者，更简单的：
+              // 只有当 user 存在，且 user.id 等于当前页面角色的 user_id 时，才显示解除按钮。
+              // 但是我们没有当前页面角色的 user_id。
+              
+              // 让我们修改 fetchRelationships，同时也获取当前角色的 user_id。
+              
+              // 实际上，我们可以直接在 CharacterDetail.js 里把 isOwner 传进来。
+              // 这是一个更好的做法。
+              
+              // 但既然我现在只能改这个文件...
+              // 我会在 fetchRelationships 里多查一次当前角色，或者直接在 render 时判断。
+              
+              // 让我们先用一个简单的逻辑：
+              // 只有当用户登录了，且用户是关系的当事人之一，才显示。
+              // 但如果是旁观者（登录了，但不是这两个角色的拥有者），他不应该看到解除按钮。
+              
+              // 让我们修改组件 props，增加 isOwner。
+              // 这需要修改 CharacterDetail.js。
+              
+              // 既然我已经修改了 CharacterDetail.js，我可以再改一次。
+              
               return (
                 <div
                   key={rel.id}
@@ -543,12 +603,14 @@ export default function RelationshipGraph({ characterId, characterName, characte
                         : `${otherChar.name}是你的${rel.from_role}`}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleRequestTermination(rel.id, otherCharId)}
-                    className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-semibold flex-shrink-0"
-                  >
-                    解除
-                  </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleRequestTermination(rel.id, otherCharId)}
+                      className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-semibold flex-shrink-0"
+                    >
+                      解除
+                    </button>
+                  )}
                 </div>
               );
             })}

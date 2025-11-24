@@ -4,8 +4,20 @@ import ClientNav from "./ClientNav";
 import { AuthProvider } from "./providers";
 
 export const metadata = {
-  title: "Persona Archive",
-  description: "Multi-persona role archive",
+  metadataBase: new URL('https://ocbase.xyz'),
+  title: {
+    default: "OCBase - OC World",
+    template: "%s | OCBase"
+  },
+  description: "Create, Manage and Share your Original Characters.",
+  openGraph: {
+    title: "OCBase - OC World",
+    description: "Create, Manage and Share your Original Characters.",
+    url: 'https://ocbase.xyz',
+    siteName: 'OCBase',
+    locale: 'zh_CN',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({ children }) {

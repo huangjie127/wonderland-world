@@ -18,6 +18,9 @@ export default function AlbumDetailPage() {
   const [filePreviews, setFilePreviews] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editingDesc, setEditingDesc] = useState("");
+  const [lightboxImage, setLightboxImage] = useState(null);
+
+  const isOwner = user?.id === character?.user_id;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -212,71 +215,73 @@ export default function AlbumDetailPage() {
       {/* 内容区 */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* 上传区域 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">上传新照片</h2>
+        {isOwner && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">上传新照片</h2>
 
-          {/* 拖拽上传 */}
-          <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition">
-            <div className="text-4xl mb-3">📷</div>
-            <p className="text-gray-700 font-semibold mb-1">点击或拖拽上传照片</p>
-            <p className="text-sm text-gray-500">支持多张上传，推荐尺寸 1200x800px</p>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </label>
+            {/* 拖拽上传 */}
+            <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition">
+              <div className="text-4xl mb-3">📷</div>
+              <p className="text-gray-700 font-semibold mb-1">点击或拖拽上传照片</p>
+              <p className="text-sm text-gray-500">支持多张上传，推荐尺寸 1200x800px</p>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </label>
 
-          {/* 预览 */}
-          {filePreviews.length > 0 && (
-            <div className="mt-6">
-              <p className="font-semibold mb-4">预览（{filePreviews.length}张）</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filePreviews.map((item, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="relative group">
-                      <img
-                        src={item.preview}
-                        alt="Preview"
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => {
-                          setFilePreviews((prev) => prev.filter((_, i) => i !== idx));
-                          setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+            {/* 预览 */}
+            {filePreviews.length > 0 && (
+              <div className="mt-6">
+                <p className="font-semibold mb-4">预览（{filePreviews.length}张）</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filePreviews.map((item, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="relative group">
+                        <img
+                          src={item.preview}
+                          alt="Preview"
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => {
+                            setFilePreviews((prev) => prev.filter((_, i) => i !== idx));
+                            setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="添加描述..."
+                        value={item.description}
+                        onChange={(e) => {
+                          const newPreviews = [...filePreviews];
+                          newPreviews[idx].description = e.target.value;
+                          setFilePreviews(newPreviews);
                         }}
-                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                      >
-                        ✕
-                      </button>
+                        className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
                     </div>
-                    <input
-                      type="text"
-                      placeholder="添加描述..."
-                      value={item.description}
-                      onChange={(e) => {
-                        const newPreviews = [...filePreviews];
-                        newPreviews[idx].description = e.target.value;
-                        setFilePreviews(newPreviews);
-                      }}
-                      className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <button
-                onClick={handleUpload}
-                disabled={uploading}
-                className="mt-4 w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 font-semibold transition"
-              >
-                {uploading ? "上传中..." : "确认上传"}
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="mt-4 w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 font-semibold transition"
+                >
+                  {uploading ? "上传中..." : "确认上传"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 相册网格 */}
         <div>
@@ -288,7 +293,10 @@ export default function AlbumDetailPage() {
                   key={album.id}
                   className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-indigo-300 transition group"
                 >
-                  <div className="aspect-video bg-gray-200 overflow-hidden relative">
+                  <div 
+                    className="aspect-video bg-gray-200 overflow-hidden relative cursor-pointer"
+                    onClick={() => setLightboxImage(album.image_url)}
+                  >
                     <img
                       src={album.image_url}
                       alt="Album"
@@ -296,12 +304,17 @@ export default function AlbumDetailPage() {
                     />
 
                     {/* 删除按钮 */}
-                    <button
-                      onClick={() => handleDeletePhoto(album.id)}
-                      className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-700"
-                    >
-                      🗑️
-                    </button>
+                    {isOwner && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePhoto(album.id);
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-700"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-4">
@@ -340,12 +353,14 @@ export default function AlbumDetailPage() {
                           <p className="text-xs text-gray-500">
                             {new Date(album.created_at).toLocaleDateString("zh-CN")}
                           </p>
-                          <button
-                            onClick={() => handleEditDescription(album)}
-                            className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold"
-                          >
-                            编辑
-                          </button>
+                          {isOwner && (
+                            <button
+                              onClick={() => handleEditDescription(album)}
+                              className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold"
+                            >
+                              编辑
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -356,11 +371,32 @@ export default function AlbumDetailPage() {
           ) : (
             <div className="text-center py-12 bg-white rounded-lg">
               <p className="text-gray-500 mb-4">暂无照片</p>
-              <p className="text-sm text-gray-400">上传第一张照片来开始记录吧</p>
+              {isOwner && <p className="text-sm text-gray-400">上传第一张照片来开始记录吧</p>}
             </div>
           )}
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300"
+            onClick={() => setLightboxImage(null)}
+          >
+            &times;
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Full size" 
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
     </div>
   );
 }

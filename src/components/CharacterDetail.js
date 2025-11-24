@@ -13,6 +13,8 @@ import LikeButton from "./LikeButton";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
+  const isOwner = user?.id === character?.user_id;
+  
   const [selfEvents, setSelfEvents] = useState([]);
   const [interactions, setInteractions] = useState([]);
   const [albums, setAlbums] = useState([]);
@@ -24,6 +26,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [tempAvatarSrc, setTempAvatarSrc] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null); // Lightbox state
   const [activeTab, setActiveTab] = useState("events"); // events | interactions
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -428,20 +431,24 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           </div>
 
           {/* 编辑按钮 */}
-          <button
-            onClick={handleEditClick}
-            className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0"
-          >
-            ✏️ 编辑
-          </button>
+          {isOwner && (
+            <button
+              onClick={handleEditClick}
+              className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0"
+            >
+              ✏️ 编辑
+            </button>
+          )}
 
           {/* Connect 按钮 */}
-          <button
-            onClick={() => setShowRelationDialog(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0"
-          >
-            🔗 Connect
-          </button>
+          {user && user.id !== character.user_id && (
+            <button
+              onClick={() => setShowRelationDialog(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0"
+            >
+              🔗 Connect
+            </button>
+          )}
 
           {/* 点赞按钮 */}
           <LikeButton characterId={character.id} ownerId={character.user_id} />
@@ -546,14 +553,16 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                       </div>
                     );
                   })}
-                  <div className="text-center pt-2">
-                    <Link 
-                      href={`/home/events?characterId=${character.id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      点击查看更多
-                    </Link>
-                  </div>
+                  {user && (
+                    <div className="text-center pt-2">
+                      <Link 
+                        href={`/home/events?characterId=${character.id}`}
+                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        点击查看更多
+                      </Link>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
@@ -631,7 +640,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800">相册</h2>
-            {albums.length > 0 && (
+            {albums.length > 0 && user && (
               <Link
                 href={`/home/albums/${character.id}`}
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
@@ -644,19 +653,19 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           {albums.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {albums.slice(0, 4).map((album) => (
-                <Link
+                <div
                   key={album.id}
-                  href={`/home/albums/${character.id}`}
                   className="relative group cursor-pointer"
+                  onClick={() => setLightboxImage(album.image_url)}
                 >
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-200">
                     <img
                       src={album.image_url}
                       alt="Album"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                   </div>
-                </Link>
+                </div>
               ))}
 
               {albums.length > 4 && (
@@ -673,25 +682,42 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           ) : (
             <div className="bg-gray-50 rounded-lg p-8 text-center">
               <p className="text-gray-500 mb-4">暂无相册</p>
-              <Link
-                href={`/home/albums/${character.id}`}
-                className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
-              >
-                上传第一张照片 →
-              </Link>
+              {isOwner && (
+                <Link
+                  href={`/home/albums/${character.id}`}
+                  className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
+                >
+                  上传第一张照片 →
+                </Link>
+              )}
             </div>
           )}
         </div>
 
         {/* 关系图谱 */}
-        <div>
-          <RelationshipGraph
-            characterId={character.id}
-            characterName={character.name}
-            characterAvatar={character.avatar_url}
-            onCharacterSelect={onCharacterSelect}
-          />
-        </div>
+        {user ? (
+          <div>
+            <RelationshipGraph
+              characterId={character.id}
+              characterName={character.name}
+              characterAvatar={character.avatar_url}
+              onCharacterSelect={onCharacterSelect}
+              isOwner={isOwner}
+            />
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg p-12 text-center border border-dashed border-gray-300">
+            <div className="text-4xl mb-3">🕸️</div>
+            <p className="text-gray-500 font-medium mb-2">登录后查看角色关系图谱</p>
+            <p className="text-sm text-gray-400 mb-4">探索角色之间错综复杂的羁绊</p>
+            <Link 
+              href="/auth/login" 
+              className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+            >
+              立即登录
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* 事件对话框 */}
@@ -728,6 +754,27 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             setTempAvatarSrc(null);
           }}
         />
+      )}
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300"
+            onClick={() => setLightboxImage(null)}
+          >
+            &times;
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Full size" 
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
       )}
     </div>
   );
