@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import MailboxDialog from "./MailboxDialog";
 
 export default function CharacterSidebar({
   characters,
@@ -13,6 +14,7 @@ export default function CharacterSidebar({
   onShowTerminations,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showMailbox, setShowMailbox] = useState(false);
 
   const filteredCharacters = characters.filter((char) =>
     char.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -27,6 +29,13 @@ export default function CharacterSidebar({
           className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition"
         >
           + 创建新角色
+        </button>
+
+        <button
+          onClick={() => setShowMailbox(true)}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 font-semibold text-sm transition flex items-center justify-center gap-2"
+        >
+          <span>📬</span> 信箱
         </button>
 
         {/* 关系请求通知按钮 */}
@@ -117,6 +126,8 @@ export default function CharacterSidebar({
           <p>共 {characters.length} 个角色</p>
         </div>
       )}
+
+      <MailboxDialog isOpen={showMailbox} onClose={() => setShowMailbox(false)} />
     </div>
   );
 }
