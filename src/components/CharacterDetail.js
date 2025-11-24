@@ -9,6 +9,7 @@ import RelationshipGraph from "./RelationshipGraph";
 import AddEventDialog from "./AddEventDialog";
 import InteractionDialog from "./InteractionDialog";
 import ImageCropper from "./ImageCropper";
+import LikeButton from "./LikeButton";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
@@ -422,6 +423,9 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           >
             🔗 Connect
           </button>
+
+          {/* 点赞按钮 */}
+          <LikeButton characterId={character.id} ownerId={character.user_id} />
         </div>
       </div>
 
