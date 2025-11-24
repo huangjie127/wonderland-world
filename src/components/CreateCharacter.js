@@ -79,30 +79,44 @@ export default function CreateCharacter({ onCreated }) {
         setUploading(true);
         
         // 1. 获取预签名 URL
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: formData.avatar.name,
-            contentType: formData.avatar.type,
-          }),
-        });
+        let uploadUrl, publicUrl;
+        try {
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: formData.avatar.name,
+              contentType: formData.avatar.type,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error("Failed to get upload URL");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          uploadUrl = data.uploadUrl;
+          publicUrl = data.publicUrl;
+        } catch (e) {
+          console.error("Step 1 Error:", e);
+          throw new Error(`获取上传地址失败: ${e.message}`);
         }
 
-        const { uploadUrl, publicUrl } = await response.json();
-
         // 2. 直接上传到 R2
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": formData.avatar.type },
-          body: formData.avatar,
-        });
+        try {
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": formData.avatar.type },
+            body: formData.avatar,
+          });
 
-        if (!uploadResponse.ok) {
-          throw new Error("Failed to upload image");
+          if (!uploadResponse.ok) {
+            throw new Error(`Storage error: ${uploadResponse.status}`);
+          }
+        } catch (e) {
+          console.error("Step 2 Error:", e);
+          throw new Error(`图片上传失败: ${e.message} (可能是 CORS 配置问题)`);
         }
 
         avatarUrl = publicUrl;
