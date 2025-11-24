@@ -61,19 +61,13 @@ declare
   target_user_id uuid;
   requester_name text;
   relationship_record record;
+  requester_user_id uuid;
 begin
   -- Get relationship details to find the other character
-  select * into relationship_record from character_relationships where id = new.relationship_id;
+  select * into relationship_record from character_relationship_requests where id = new.relationship_id;
   
-  -- Determine who to notify (the one who didn't request it)
-  -- Note: This logic assumes we can find the other user. 
-  -- Ideally, we need to know which character belongs to the user who initiated the termination.
-  -- But the termination table has 'requested_by' (user_id).
-  
-  -- Let's find the character that belongs to the OTHER user
-  -- If requested_by is user A, and relationship is between Char A (User A) and Char B (User B), notify User B.
-  
-  -- Simple approach: Notify both owners of the relationship characters, except the requester.
+  -- Get requester user id
+  select user_id into requester_user_id from characters where id = new.requested_by;
   
   -- Get Char 1 Owner
   declare
@@ -82,15 +76,15 @@ begin
     char1_name text;
     char2_name text;
   begin
-    select user_id, name into char1_owner, char1_name from characters where id = relationship_record.character1_id;
-    select user_id, name into char2_owner, char2_name from characters where id = relationship_record.character2_id;
+    select user_id, name into char1_owner, char1_name from characters where id = relationship_record.from_character_id;
+    select user_id, name into char2_owner, char2_name from characters where id = relationship_record.to_character_id;
     
-    if char1_owner != new.requested_by then
+    if char1_owner != requester_user_id then
         insert into notifications (user_id, type, title, content, data)
         values (char1_owner, 'relationship_termination', '收到关系解除请求', '有人请求解除与 ' || char1_name || ' 的关系', jsonb_build_object('termination_id', new.id));
     end if;
     
-    if char2_owner != new.requested_by then
+    if char2_owner != requester_user_id then
         insert into notifications (user_id, type, title, content, data)
         values (char2_owner, 'relationship_termination', '收到关系解除请求', '有人请求解除与 ' || char2_name || ' 的关系', jsonb_build_object('termination_id', new.id));
     end if;
