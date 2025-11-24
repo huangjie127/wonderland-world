@@ -14,6 +14,19 @@ export async function POST(request) {
       );
     }
 
+    // Debug: Check environment variables
+    const debugInfo = {
+      hasAccountId: !!process.env.R2_ACCOUNT_ID,
+      hasAccessKey: !!process.env.R2_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.R2_SECRET_ACCESS_KEY,
+      bucket: process.env.R2_BUCKET_NAME,
+    };
+    console.log("Upload Debug Info:", debugInfo);
+
+    if (!process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+      throw new Error("Missing R2 credentials in environment variables");
+    }
+
     // Generate a unique filename
     const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${filename}`;
 
