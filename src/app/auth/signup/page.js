@@ -9,6 +9,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,14 +44,44 @@ export default function SignupPage() {
       if (signUpError) throw signUpError;
 
       if (data?.user) {
-        setSuccess("注册成功！请检查邮箱验证，然后登录");
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 2000);
+        // 如果用户已存在但未验证，或者新注册，都显示 OTP 输入框
+        if (data.user.identities?.length === 0) {
+           setError("该邮箱已被注册");
+           setLoading(false);
+           return;
+        }
+        
+        setSuccess("验证邮件已发送！请在下方输入邮件中的 6 位数字验证码。");
+        setShowOtpInput(true);
       }
     } catch (err) {
       setError(err.message || "注册失败，请重试");
       console.error("Signup error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'signup'
+      });
+
+      if (verifyError) throw verifyError;
+
+      setSuccess("验证成功！正在跳转...");
+      setTimeout(() => {
+        router.push("/home");
+      }, 1500);
+    } catch (err) {
+      setError(err.message || "验证失败，请检查验证码");
     } finally {
       setLoading(false);
     }
@@ -61,62 +93,100 @@ export default function SignupPage() {
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">创建账户</h1>
         <p className="text-center text-gray-600 mb-8">加入 Persona Archive</p>
 
-        <form onSubmit={handleSignup} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-              {error}
+        {showOtpInput ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+             {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+                {success}
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">邮箱验证码</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="请输入邮件中的6位数字"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest text-lg"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                请查看您的邮箱 {email}，找到验证邮件中的数字验证码。
+                <br/>
+                (如果没收到，请检查垃圾箱，或修改 Supabase 邮件模板以包含 Token)
+              </p>
             </div>
-          )}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
-              {success}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+            >
+              {loading ? "验证中..." : "完成验证"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSignup} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+                {success}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="至少6位"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="至少6位"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
-          >
-            {loading ? "注册中..." : "注册"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+            >
+              {loading ? "发送验证码" : "注册"}
+            </button>
+          </form>
+        )}
 
         <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-center text-gray-600 text-sm">
