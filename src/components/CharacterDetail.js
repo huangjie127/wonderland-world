@@ -8,6 +8,7 @@ import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
 import AddEventDialog from "./AddEventDialog";
 import InteractionDialog from "./InteractionDialog";
+import ImageCropper from "./ImageCropper";
 
 export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
   const { user } = useAuth();
@@ -20,6 +21,8 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [showRelationDialog, setShowRelationDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempAvatarSrc, setTempAvatarSrc] = useState(null);
   const [activeTab, setActiveTab] = useState("events"); // events | interactions
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -97,12 +100,28 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setTempAvatarSrc(reader.result);
+        setShowCropper(true);
+      });
+      reader.readAsDataURL(file);
+      // Reset input value so same file can be selected again
+      e.target.value = null;
+    }
+  };
+
+  const handleCropComplete = (croppedBlob) => {
+    if (croppedBlob) {
+      const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
       setEditFormData((prev) => ({
         ...prev,
         avatar: file,
-        avatarPreview: URL.createObjectURL(file),
+        avatarPreview: URL.createObjectURL(croppedBlob),
       }));
     }
+    setShowCropper(false);
+    setTempAvatarSrc(null);
   };
 
   const handleSaveEdit = async () => {
@@ -675,6 +694,18 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           fetchData(); // 刷新数据
         }}
       />
+
+      {/* 图片裁剪器 */}
+      {showCropper && tempAvatarSrc && (
+        <ImageCropper
+          imageSrc={tempAvatarSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setTempAvatarSrc(null);
+          }}
+        />
+      )}
     </div>
   );
 }

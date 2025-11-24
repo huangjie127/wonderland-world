@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/providers";
 import { useRouter } from "next/navigation";
+import ImageCropper from "./ImageCropper";
 
 export default function CreateCharacter({ onCreated }) {
   const { user } = useAuth();
@@ -11,6 +12,8 @@ export default function CreateCharacter({ onCreated }) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempAvatarSrc, setTempAvatarSrc] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     tagline: "",
@@ -27,12 +30,28 @@ export default function CreateCharacter({ onCreated }) {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setTempAvatarSrc(reader.result);
+        setShowCropper(true);
+      });
+      reader.readAsDataURL(file);
+      // Reset input value so same file can be selected again
+      e.target.value = null;
+    }
+  };
+
+  const handleCropComplete = (croppedBlob) => {
+    if (croppedBlob) {
+      const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
       setFormData((prev) => ({
         ...prev,
         avatar: file,
-        avatarPreview: URL.createObjectURL(file),
+        avatarPreview: URL.createObjectURL(croppedBlob),
       }));
     }
+    setShowCropper(false);
+    setTempAvatarSrc(null);
   };
 
   const handleSubmit = async (e) => {
@@ -204,6 +223,18 @@ export default function CreateCharacter({ onCreated }) {
           {uploading ? "上传头像中..." : loading ? "创建中..." : "创建角色"}
         </button>
       </div>
+
+      {/* 图片裁剪器 */}
+      {showCropper && tempAvatarSrc && (
+        <ImageCropper
+          imageSrc={tempAvatarSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropper(false);
+            setTempAvatarSrc(null);
+          }}
+        />
+      )}
     </form>
   );
 }
