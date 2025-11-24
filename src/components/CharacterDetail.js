@@ -236,6 +236,9 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
   const handleRelationshipSubmit = async (relationshipData) => {
     try {
+      // 如果是自己的角色，直接通过；否则为 pending
+      const status = isOwner ? "accepted" : "pending";
+      
       const { error } = await supabase
         .from("character_relationship_requests")
         .insert([
@@ -244,16 +247,18 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             to_character_id: relationshipData.to_character_id,
             from_role: relationshipData.from_role,
             to_role: relationshipData.to_role,
-            status: "pending",
+            status: status,
           },
         ]);
 
       if (error) throw error;
 
-      alert("关系申请已发送！");
+      alert(isOwner ? "关系已建立！" : "关系申请已发送！");
       setShowRelationDialog(false);
+      // 刷新数据以显示新关系
+      fetchData();
     } catch (err) {
-      alert("发送失败：" + err.message);
+      alert("操作失败：" + err.message);
       console.error("Relationship error:", err);
     }
   };
@@ -441,7 +446,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           )}
 
           {/* Connect 按钮 */}
-          {user && user.id !== character.user_id && (
+          {user && (
             <button
               onClick={() => setShowRelationDialog(true)}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0"
@@ -462,6 +467,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
         onSubmit={handleRelationshipSubmit}
         targetCharacterId={character.id}
         targetCharacterName={character.name}
+        isTargetOwner={isOwner}
       />
 
       {/* 内容区 */}

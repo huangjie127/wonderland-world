@@ -38,6 +38,7 @@ export default function RelationshipDialog({
   onSubmit,
   targetCharacterId,
   targetCharacterName,
+  isTargetOwner,
 }) {
   const { user } = useAuth();
   const [step, setStep] = useState(1); // 1: 选择发起者, 2: 选择预设, 3: 自定义, 4: 确认
@@ -60,11 +61,13 @@ export default function RelationshipDialog({
         .select("id, name, avatar_url")
         .eq("user_id", user.id);
 
-      setMyCharacters(data || []);
+      // 过滤掉当前目标角色（避免自己和自己建立关系）
+      const filteredData = data ? data.filter(c => c.id !== targetCharacterId) : [];
+      setMyCharacters(filteredData);
     };
 
     fetchMyCharacters();
-  }, [isOpen, user]);
+  }, [isOpen, user, targetCharacterId]);
 
   const handleCharacterSelect = (charId) => {
     setSelectedCharacterId(charId);
@@ -312,7 +315,9 @@ export default function RelationshipDialog({
             </div>
 
             <p className="text-sm text-gray-600 text-center">
-              发起关系申请后，对方需要确认才能正式建立关系。
+              {isTargetOwner 
+                ? "由于这是你自己的角色，关系将直接建立。" 
+                : "发起关系申请后，对方需要确认才能正式建立关系。"}
             </p>
 
             <div className="flex gap-3">
@@ -326,7 +331,7 @@ export default function RelationshipDialog({
                 onClick={handleConfirm}
                 className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold transition"
               >
-                发起申请
+                {isTargetOwner ? "建立关系" : "发起申请"}
               </button>
             </div>
           </div>
