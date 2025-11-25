@@ -143,38 +143,22 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
       // 上传新头像（如果选择了）
       if (editFormData.avatar) {
         const file = editFormData.avatar;
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
         
-        // 1. 获取预签名 URL
-        const uploadRes = await fetch("/api/upload", {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+        uploadFormData.append("watermarkText", `OCBase ${editFormData.name}`);
+
+        const uploadRes = await fetch("/api/upload-watermark", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: fileName,
-            contentType: file.type,
-          }),
+          body: uploadFormData,
         });
 
         if (!uploadRes.ok) {
-          throw new Error("Failed to get upload URL");
+          const errorData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to upload image");
         }
 
-        const { uploadUrl, publicUrl } = await uploadRes.json();
-
-        // 2. 上传文件到 R2
-        const putRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": file.type,
-          },
-          body: file,
-        });
-
-        if (!putRes.ok) {
-          throw new Error("Failed to upload image to R2");
-        }
-
+        const { publicUrl } = await uploadRes.json();
         newAvatarUrl = publicUrl;
       }
 

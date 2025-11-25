@@ -10,7 +10,7 @@ import Underline from '@tiptap/extension-underline';
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
-export default function RichTextEditor({ content, onChange }) {
+export default function RichTextEditor({ content, onChange, watermarkText }) {
   const fileInputRef = useRef(null);
 
   const editor = useEditor({
@@ -56,38 +56,20 @@ export default function RichTextEditor({ content, onChange }) {
     }
 
     try {
-      // 生成唯一文件名
-      const fileExt = file.name.split('.').pop();
-      const fileName = `events/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("watermarkText", watermarkText || "OCBase");
 
-      // 1. 获取预签名 URL
-      const uploadRes = await fetch("/api/upload", {
+      const uploadRes = await fetch("/api/upload-watermark", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: fileName,
-          contentType: file.type,
-        }),
+        body: uploadFormData,
       });
 
       if (!uploadRes.ok) {
-        throw new Error("Failed to get upload URL");
+        throw new Error("Failed to upload image");
       }
 
-      const { uploadUrl, publicUrl } = await uploadRes.json();
-
-      // 2. 上传文件到 R2
-      const putRes = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-        },
-        body: file,
-      });
-
-      if (!putRes.ok) {
-        throw new Error("Failed to upload image to R2");
-      }
+      const { publicUrl } = await uploadRes.json();
 
       // 插入图片到编辑器
       editor?.chain().focus().setImage({ src: publicUrl }).run();
@@ -95,7 +77,7 @@ export default function RichTextEditor({ content, onChange }) {
       console.error('Upload error:', err);
       alert('上传失败，请重试');
     }
-  }, [editor]);
+  }, [editor, watermarkText]);
 
   const handleImageUpload = useCallback(() => {
     fileInputRef.current?.click();

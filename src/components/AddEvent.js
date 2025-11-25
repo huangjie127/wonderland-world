@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AddEvent({ characterId }) {
@@ -9,6 +9,16 @@ export default function AddEvent({ characterId }) {
   const [imageUrl, setImageUrl] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [characterName, setCharacterName] = useState("");
+
+  useEffect(() => {
+    if (characterId) {
+      supabase.from("characters").select("name").eq("id", characterId).single()
+        .then(({ data }) => {
+          if (data) setCharacterName(data.name);
+        });
+    }
+  }, [characterId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,32 +28,21 @@ export default function AddEvent({ characterId }) {
 
       // 如果选择了文件，先上传到 R2
       if (file) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `events/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+        uploadFormData.append("watermarkText", `OCBase ${characterName}`);
 
-        // 1. 获取预签名 URL
-        const uploadRes = await fetch("/api/upload", {
+        const uploadRes = await fetch("/api/upload-watermark", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: fileName,
-            contentType: file.type,
-          }),
+          body: uploadFormData,
         });
 
-        if (!uploadRes.ok) throw new Error("Failed to get upload URL");
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to upload image");
+        }
 
-        const { uploadUrl, publicUrl } = await uploadRes.json();
-
-        // 2. 上传文件
-        const putRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        if (!putRes.ok) throw new Error("Failed to upload image");
-
+        const { publicUrl } = await uploadRes.json();
         finalImageUrl = publicUrl;
       }
 

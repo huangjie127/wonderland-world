@@ -20,11 +20,14 @@
     "@tiptap/extension-underline": "^2.10.4",
     "@tiptap/react": "^2.10.4",
     "@tiptap/starter-kit": "^2.10.4",
+    "dotenv": "^17.2.3",
+    "jsdom": "^27.2.0",
     "next": "16.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-easy-crop": "^5.5.5",
-    "react-force-graph": "^1.48.1"
+    "react-force-graph": "^1.48.1",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -78,16 +78,14 @@ export default function CreateCharacter({ onCreated }) {
       if (formData.avatar) {
         setUploading(true);
         
-        // 1. 获取预签名 URL
-        let uploadUrl, publicUrl;
         try {
-          const response = await fetch("/api/upload", {
+          const uploadFormData = new FormData();
+          uploadFormData.append("file", formData.avatar);
+          uploadFormData.append("watermarkText", `OCBase ${formData.name}`);
+
+          const response = await fetch("/api/upload-watermark", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              filename: formData.avatar.name,
-              contentType: formData.avatar.type,
-            }),
+            body: uploadFormData,
           });
 
           if (!response.ok) {
@@ -96,30 +94,12 @@ export default function CreateCharacter({ onCreated }) {
           }
 
           const data = await response.json();
-          uploadUrl = data.uploadUrl;
-          publicUrl = data.publicUrl;
+          avatarUrl = data.publicUrl;
         } catch (e) {
-          console.error("Step 1 Error:", e);
-          throw new Error(`获取上传地址失败: ${e.message}`);
+          console.error("Upload Error:", e);
+          throw new Error(`图片上传失败: ${e.message}`);
         }
 
-        // 2. 直接上传到 R2
-        try {
-          const uploadResponse = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": formData.avatar.type },
-            body: formData.avatar,
-          });
-
-          if (!uploadResponse.ok) {
-            throw new Error(`Storage error: ${uploadResponse.status}`);
-          }
-        } catch (e) {
-          console.error("Step 2 Error:", e);
-          throw new Error(`图片上传失败: ${e.message} (可能是 CORS 配置问题)`);
-        }
-
-        avatarUrl = publicUrl;
         setUploading(false);
       }
 

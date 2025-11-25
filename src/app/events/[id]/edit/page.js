@@ -210,6 +210,7 @@ export default function EventEditPage() {
                 <RichTextEditor 
                   content={content}
                   onChange={setContent}
+                  watermarkText={`OCBase ${character?.name || ''}`}
                   className="min-h-[500px]"
                 />
                 <p className="text-xs text-gray-500 mt-2">
