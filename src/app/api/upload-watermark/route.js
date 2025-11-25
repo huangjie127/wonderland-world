@@ -31,6 +31,7 @@ export async function POST(request) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // 1. Resize first to get consistent dimensions
+    // Improved watermark logic: dynamic sizing and shadow
     const resizedBuffer = await sharp(buffer)
       .resize(1080, null, {
         withoutEnlargement: true,
