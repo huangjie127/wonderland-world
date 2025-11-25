@@ -30,6 +30,9 @@ export default function CreateCharacter({ onCreated }) {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Clear previous avatar data to ensure user must crop new one
+      setFormData(prev => ({ ...prev, avatar: null, avatarPreview: null }));
+      
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         setTempAvatarSrc(reader.result);

@@ -66,10 +66,12 @@ export async function POST(request) {
             font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
           }
           .shadow {
-            fill: rgba(0, 0, 0, 0.8);
+            fill: #000000;
+            fill-opacity: 0.8;
           }
           .main {
-            fill: rgba(255, 255, 255, 0.9);
+            fill: #FFFFFF;
+            fill-opacity: 0.9;
           }
         </style>
         <!-- Shadow Layer -->
@@ -118,6 +120,9 @@ export async function POST(request) {
     await r2.send(command);
 
     // 4. 构建公开访问 URL
+    if (!process.env.R2_PUBLIC_URL) {
+      throw new Error("Server configuration error: R2_PUBLIC_URL is missing");
+    }
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${uniqueFilename}`;
 
     return NextResponse.json({
