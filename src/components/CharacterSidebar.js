@@ -11,11 +11,18 @@ export default function CharacterSidebar({
   onCreateNew,
   pendingCount = 0,
   terminationCount = 0,
+  unreadMsgCount = 0,
   onShowNotifications,
   onShowTerminations,
+  onOpenMailbox,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showMailbox, setShowMailbox] = useState(false);
+
+  const handleOpenMailbox = () => {
+    setShowMailbox(true);
+    if (onOpenMailbox) onOpenMailbox();
+  };
 
   const filteredCharacters = characters.filter((char) =>
     char.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -33,10 +40,18 @@ export default function CharacterSidebar({
         </button>
 
         <button
-          onClick={() => setShowMailbox(true)}
-          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 font-semibold text-sm transition flex items-center justify-center gap-2"
+          onClick={handleOpenMailbox}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 font-semibold text-sm transition flex items-center justify-center gap-2 relative"
         >
           <span>📬</span> 信箱
+          {unreadMsgCount > 0 && (
+            <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-[10px] text-white items-center justify-center">
+                {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
+              </span>
+            </span>
+          )}
         </button>
 
         {/* 关系请求通知按钮 */}

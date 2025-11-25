@@ -21,6 +21,7 @@ export default function HomePage() {
   const [showTerminations, setShowTerminations] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [terminationCount, setTerminationCount] = useState(0);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
   // 重定向未登录用户
   useEffect(() => {
@@ -73,6 +74,15 @@ export default function HomePage() {
         
         setTerminationCount(relatedTerminations.length);
       }
+
+      // 检查未读通知
+      const { count: unreadCount } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      
+      setUnreadMsgCount(unreadCount || 0);
     };
 
     fetchCharacters();
@@ -136,8 +146,14 @@ export default function HomePage() {
         onCreateNew={() => setShowCreateForm(true)}
         pendingCount={pendingCount}
         terminationCount={terminationCount}
+        unreadMsgCount={unreadMsgCount}
         onShowNotifications={() => setShowNotifications(true)}
         onShowTerminations={() => setShowTerminations(true)}
+        onOpenMailbox={() => {
+            // 打开信箱时清空未读计数（视觉上）
+            // 实际清空会在 MailboxDialog 内部调用 markAllAsRead
+            setUnreadMsgCount(0);
+        }}
       />
 
       {/* 右侧内容区 */}
