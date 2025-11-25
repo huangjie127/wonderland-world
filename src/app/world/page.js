@@ -84,7 +84,10 @@ export default function WorldChannelPage() {
         
         // Check Admin ID from env
         const adminId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
-        if (adminId && user.id === adminId) {
+        // Fallback to hardcoded ID if env is not set (for development)
+        const HARDCODED_ADMIN_ID = 'd4f695b7-77cf-4340-b62b-443a3c166e60';
+        
+        if ((adminId && user.id === adminId) || user.id === HARDCODED_ADMIN_ID) {
             setIsAdmin(true);
         } else {
             setIsAdmin(false);
