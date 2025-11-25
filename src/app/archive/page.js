@@ -8,6 +8,7 @@ import "./archive.css";
 export default function ArchivePage() {
   const [allCharacters, setAllCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // 加载所有角色
   useEffect(() => {
@@ -26,6 +27,10 @@ export default function ArchivePage() {
     fetchCharacters();
   }, []);
 
+  const filteredCharacters = allCharacters.filter(char => 
+    char.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return <div className="text-center py-8">加载中...</div>;
   }
@@ -34,9 +39,34 @@ export default function ArchivePage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 所有角色部分 */}
       <section>
-        <h2 className="text-3xl font-bold mb-6">社区角色库</h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h2 className="text-3xl font-bold text-gray-800">社区角色库</h2>
+            
+            {/* Search Bar */}
+            <div className="relative w-full md:w-64">
+                <input
+                    type="text"
+                    placeholder="搜索角色名..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+                />
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        {filteredCharacters.length === 0 && searchQuery && (
+            <div className="text-center py-12 text-gray-500">
+                没有找到名为 "{searchQuery}" 的角色
+            </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {allCharacters.map((char) => (
+          {filteredCharacters.map((char) => (
             <Link
               key={char.id}
               href={`/archive/${char.id}`}
