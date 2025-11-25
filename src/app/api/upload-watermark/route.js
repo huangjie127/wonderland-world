@@ -8,7 +8,15 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const watermarkText = formData.get("watermarkText") || "OCBase";
+    let watermarkText = formData.get("watermarkText") || "OCBase";
+
+    console.log("Received watermark text:", watermarkText);
+
+    // Ensure it starts with OCBase if somehow missing (unless it's just OCBase)
+    if (!watermarkText.startsWith("OCBase") && watermarkText !== "OCBase") {
+        // Optional: Force prefix if user wants "OCBase + Name" strictly
+        // watermarkText = `OCBase ${watermarkText}`;
+    }
 
     // Escape XML special characters to prevent SVG breakage
     const escapedWatermarkText = watermarkText.replace(/[<>&'"]/g, function (c) {
@@ -48,23 +56,29 @@ export async function POST(request) {
     const margin = Math.floor(fontSize * 0.5);
     
     // Create SVG with text shadow for better visibility
+    // Using classic SVG filters for maximum compatibility with librsvg/sharp
     const svgImage = `
       <svg width="${width}" height="${height}">
+        <defs>
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+            <feOffset in="blur" dx="2" dy="2" result="offsetBlur"/>
+            <feFlood flood-color="black" flood-opacity="0.8" result="color"/>
+            <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+            <feMerge>
+              <feMergeNode in="shadow"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
         <style>
           .text { 
-            fill: rgba(255, 255, 255, 0.8); 
+            fill: rgba(255, 255, 255, 0.9); 
             font-size: ${fontSize}px; 
             font-weight: bold; 
             font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
           }
         </style>
-        <!-- Shadow/Stroke effect by duplicating text -->
-        <defs>
-          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="black" flood-opacity="0.8"/>
-          </filter>
-        </defs>
         <text 
           x="${width - margin}" 
           y="${height - margin}" 
