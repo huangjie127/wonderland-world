@@ -12,8 +12,9 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     let watermarkText = formData.get("watermarkText") || "OCBase";
+    const skipWatermark = formData.get("skipWatermark") === "true";
 
-    console.log("Received watermark text:", watermarkText);
+    console.log("Received watermark text:", watermarkText, "Skip:", skipWatermark);
 
     // Ensure it starts with OCBase if somehow missing (unless it's just OCBase)
     if (!watermarkText.startsWith("OCBase") && watermarkText !== "OCBase") {
@@ -40,57 +41,66 @@ export async function POST(request) {
       })
       .toBuffer();
 
-    const metadata = await sharp(resizedBuffer).metadata();
-    const width = metadata.width;
-    const height = metadata.height;
+    let processedImageBuffer;
 
-    // Calculate font size based on image width (e.g., 2% of width - smaller for elegance)
-    const fontSize = Math.max(14, Math.floor(width * 0.02));
-    const margin = Math.floor(fontSize * 0.8);
-    const shadowOffset = Math.max(1, Math.floor(fontSize * 0.08));
-    
-    // Load font and generate SVG path
-    // Use local font file to avoid system permission issues
-    const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'simhei.ttf');
-    const textToSVG = TextToSVG.loadSync(fontPath);
-    
-    const optionsMain = { 
-        x: width - margin, 
-        y: height - margin, 
-        fontSize: fontSize, 
-        anchor: 'right bottom'
-    };
-    
-    const optionsShadow = { 
-        x: width - margin + shadowOffset, 
-        y: height - margin + shadowOffset, 
-        fontSize: fontSize, 
-        anchor: 'right bottom'
-    };
+    if (skipWatermark) {
+        // Skip watermarking, just compress
+        processedImageBuffer = await sharp(resizedBuffer)
+            .jpeg({ quality: 85 })
+            .toBuffer();
+    } else {
+        const metadata = await sharp(resizedBuffer).metadata();
+        const width = metadata.width;
+        const height = metadata.height;
 
-    const dMain = textToSVG.getD(watermarkText, optionsMain);
-    const dShadow = textToSVG.getD(watermarkText, optionsShadow);
+        // Calculate font size based on image width (e.g., 2% of width - smaller for elegance)
+        const fontSize = Math.max(14, Math.floor(width * 0.02));
+        const margin = Math.floor(fontSize * 0.8);
+        const shadowOffset = Math.max(1, Math.floor(fontSize * 0.08));
+        
+        // Load font and generate SVG path
+        // Use local font file to avoid system permission issues
+        const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'simhei.ttf');
+        const textToSVG = TextToSVG.loadSync(fontPath);
+        
+        const optionsMain = { 
+            x: width - margin, 
+            y: height - margin, 
+            fontSize: fontSize, 
+            anchor: 'right bottom'
+        };
+        
+        const optionsShadow = { 
+            x: width - margin + shadowOffset, 
+            y: height - margin + shadowOffset, 
+            fontSize: fontSize, 
+            anchor: 'right bottom'
+        };
 
-    // Elegant style: Semi-transparent white with very subtle dark shadow
-    const svgImage = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <path d="${dShadow}" fill="#000000" fill-opacity="0.2" />
-        <path d="${dMain}" fill="#FFFFFF" fill-opacity="0.6" />
-      </svg>
-    `;
+        const dMain = textToSVG.getD(watermarkText, optionsMain);
+        const dShadow = textToSVG.getD(watermarkText, optionsShadow);
 
-    // 2. Composite watermark
-    const processedImageBuffer = await sharp(resizedBuffer)
-      .composite([
-        {
-          input: Buffer.from(svgImage),
-          top: 0,
-          left: 0,
-          blend: 'over'
-        }
-      ])
-      .jpeg({ quality: 85 })
-      .toBuffer();
+        // Elegant style: Semi-transparent white with very subtle dark shadow
+        const svgImage = `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <path d="${dShadow}" fill="#000000" fill-opacity="0.2" />
+            <path d="${dMain}" fill="#FFFFFF" fill-opacity="0.6" />
+        </svg>
+        `;
+
+        // 2. Composite watermark
+        processedImageBuffer = await sharp(resizedBuffer)
+        .composite([
+            {
+            input: Buffer.from(svgImage),
+            top: 0,
+            left: 0,
+            blend: 'over'
+            }
+        ])
+        .jpeg({ quality: 85 })
+        .toBuffer();
+    }
 
     // 2. 生成唯一文件名
     const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.jpg`;

@@ -7,6 +7,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [eventType, setEventType] = useState("worldview"); // worldview, story, mood
+  const [isPublic, setIsPublic] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const eventTypes = [
@@ -33,6 +34,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
           type: "SELF",
           title: finalTitle,
           content: `[${eventType}] ${content}`,
+          is_public: isPublic,
         },
       ]);
 
@@ -41,6 +43,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
       setTitle("");
       setContent("");
       setEventType("worldview");
+      setIsPublic(true);
       if (onEventAdded) onEventAdded();
       onClose();
     } catch (err) {
@@ -119,6 +122,20 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
             <p className="text-xs text-gray-500 mt-1">
               {content.length}/500
             </p>
+          </div>
+
+          {/* 公开选项 */}
+          <div className="mb-6 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="eventIsPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <label htmlFor="eventIsPublic" className="text-sm text-gray-700 select-none cursor-pointer">
+              公开事件 <span className="text-gray-400 text-xs">(不公开则仅自己可见)</span>
+            </label>
           </div>
 
           {/* 操作按钮 */}

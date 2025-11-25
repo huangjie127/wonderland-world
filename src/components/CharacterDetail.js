@@ -43,14 +43,32 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
     setLoading(true);
 
     try {
+      // 构建查询
+      let eventsQuery = supabase
+        .from("character_events")
+        .select("*")
+        .eq("character_id", character.id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      let albumsQuery = supabase
+        .from("character_albums")
+        .select("*")
+        .eq("character_id", character.id)
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      // 如果不是拥有者，只显示公开内容
+      // 注意：user 可能为 null (未登录)，此时 isOwner 为 false，正确
+      const isOwner = user?.id === character?.user_id;
+      if (!isOwner) {
+        eventsQuery = eventsQuery.eq("is_public", true);
+        albumsQuery = albumsQuery.eq("is_public", true);
+      }
+
       // 加载新的事件系统数据
       const [selfEventsData, interactionsData, albumsData] = await Promise.all([
-        supabase
-          .from("character_events")
-          .select("*")
-          .eq("character_id", character.id)
-          .order("created_at", { ascending: false })
-          .limit(3),
+        eventsQuery,
         supabase
           .from("character_interactions")
           .select(`
@@ -61,12 +79,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           .is("event_id", null) // 只获取留言板内容，不获取事件评论
           .order("created_at", { ascending: false })
           .limit(50),
-        supabase
-          .from("character_albums")
-          .select("*")
-          .eq("character_id", character.id)
-          .order("created_at", { ascending: false })
-          .limit(4),
+        albumsQuery,
       ]);
 
       setSelfEvents(selfEventsData.data || []);

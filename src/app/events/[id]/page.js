@@ -45,7 +45,15 @@ export default function EventViewPage() {
 
       // 检查是否是事件所有者
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && eventData.characters?.user_id === user.id) {
+      const isUserOwner = user && eventData.characters?.user_id === user.id;
+      
+      if (!eventData.is_public && !isUserOwner) {
+        alert("该事件为私密事件，您无权查看");
+        router.push('/home');
+        return;
+      }
+
+      if (isUserOwner) {
         setIsOwner(true);
       }
 

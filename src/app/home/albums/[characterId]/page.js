@@ -19,6 +19,7 @@ export default function AlbumDetailPage() {
   const [editingId, setEditingId] = useState(null);
   const [editingDesc, setEditingDesc] = useState("");
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [isPublicUpload, setIsPublicUpload] = useState(true);
 
   const isOwner = user?.id === character?.user_id;
 
@@ -27,21 +28,31 @@ export default function AlbumDetailPage() {
       if (!characterId || !user) return;
 
       try {
-        const [charData, albumsData] = await Promise.all([
-          supabase
+        // 1. Fetch Character first to determine ownership
+        const { data: charData } = await supabase
             .from("characters")
             .select("*")
             .eq("id", characterId)
-            .single(),
-          supabase
-            .from("character_albums")
-            .select("*")
-            .eq("character_id", characterId)
-            .order("created_at", { ascending: false }),
-        ]);
+            .single();
 
-        if (charData.data) setCharacter(charData.data);
-        if (albumsData.data) setAlbums(albumsData.data);
+        if (charData) {
+            setCharacter(charData);
+            const isOwner = user.id === charData.user_id;
+
+            // 2. Fetch Albums with conditional filtering
+            let query = supabase
+                .from("character_albums")
+                .select("*")
+                .eq("character_id", characterId)
+                .order("created_at", { ascending: false });
+            
+            if (!isOwner) {
+                query = query.eq("is_public", true);
+            }
+
+            const { data: albumsData } = await query;
+            if (albumsData) setAlbums(albumsData);
+        }
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -77,6 +88,9 @@ export default function AlbumDetailPage() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("watermarkText", `OCBase ${character.name}`);
+        if (!isPublicUpload) {
+            formData.append("skipWatermark", "true");
+        }
 
         const uploadRes = await fetch("/api/upload-watermark", {
           method: "POST",
@@ -99,6 +113,7 @@ export default function AlbumDetailPage() {
               character_id: character.id,
               image_url: imageUrl,
               description: filePreviews[i]?.description || "",
+              is_public: isPublicUpload,
             },
           ]);
 
@@ -106,15 +121,21 @@ export default function AlbumDetailPage() {
       }
 
       // 刷新相册列表
-      const { data } = await supabase
+      let query = supabase
         .from("character_albums")
         .select("*")
         .eq("character_id", character.id)
         .order("created_at", { ascending: false });
+        
+      // Owner is always true here since only owner can upload
+      // But for consistency let's just fetch all since we are owner
+      
+      const { data } = await query;
 
       setAlbums(data || []);
       setSelectedFiles([]);
       setFilePreviews([]);
+      setIsPublicUpload(true);
 
       alert("上传成功！");
     } catch (err) {
@@ -229,6 +250,22 @@ export default function AlbumDetailPage() {
                 className="hidden"
               />
             </label>
+
+            {/* 公开选项 */}
+            {selectedFiles.length > 0 && (
+                <div className="mt-4 flex items-center gap-2">
+                    <input
+                    type="checkbox"
+                    id="isPublicUpload"
+                    checked={isPublicUpload}
+                    onChange={(e) => setIsPublicUpload(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label htmlFor="isPublicUpload" className="text-sm text-gray-700 select-none cursor-pointer">
+                    公开照片 <span className="text-gray-400 text-xs">(公开：所有人可见+水印；私密：仅自己可见+无水印)</span>
+                    </label>
+                </div>
+            )}
 
             {/* 预览 */}
             {filePreviews.length > 0 && (

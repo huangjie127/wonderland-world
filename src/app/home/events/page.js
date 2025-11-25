@@ -41,11 +41,17 @@ function EventsContent() {
     setIsOwner(user?.id === charData.user_id);
 
     // 2. Fetch Events
-    const { data: eventsData } = await supabase
+    let query = supabase
       .from("character_events")
       .select("*")
       .eq("character_id", characterId)
       .order("created_at", { ascending: false });
+    
+    if (user?.id !== charData.user_id) {
+        query = query.eq("is_public", true);
+    }
+
+    const { data: eventsData } = await query;
 
     // 3. Fetch Tags for these events
     const eventIds = eventsData?.map(e => e.id) || [];

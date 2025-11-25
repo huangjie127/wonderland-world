@@ -8,6 +8,7 @@ export default function AddPhoto({ characterId }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [characterName, setCharacterName] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
     if (characterId) {
@@ -29,6 +30,9 @@ export default function AddPhoto({ characterId }) {
         const uploadFormData = new FormData();
         uploadFormData.append("file", file);
         uploadFormData.append("watermarkText", `OCBase ${characterName}`);
+        if (!isPublic) {
+          uploadFormData.append("skipWatermark", "true");
+        }
 
         const uploadRes = await fetch("/api/upload-watermark", {
           method: "POST",
@@ -53,11 +57,13 @@ export default function AddPhoto({ characterId }) {
       const { error } = await supabase.from("character_albums").insert([{
         character_id: characterId,
         image_url: finalImageUrl,
+        is_public: isPublic,
       }]);
       if (error) throw error;
       
       setImageUrl("");
       setFile(null);
+      setIsPublic(true);
       alert("照片添加成功！");
       window.location.reload();
     } catch (error) {
@@ -85,6 +91,19 @@ export default function AddPhoto({ characterId }) {
             file:bg-indigo-50 file:text-indigo-700
             hover:file:bg-indigo-100"
         />
+      </div>
+
+      <div className="flex items-center gap-2 py-1">
+        <input
+          type="checkbox"
+          id="isPublic"
+          checked={isPublic}
+          onChange={(e) => setIsPublic(e.target.checked)}
+          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        />
+        <label htmlFor="isPublic" className="text-sm text-gray-700 select-none cursor-pointer">
+          公开照片 <span className="text-gray-400 text-xs">(公开：所有人可见+水印；私密：仅自己可见+无水印)</span>
+        </label>
       </div>
 
       <div className="text-center text-gray-400 text-xs">- 或 -</div>
