@@ -368,7 +368,7 @@ export default function WorldChannelPage() {
                                 </svg>
                             </button>
                         )}
-                        <div className="text-sm text-gray-700 font-medium mb-1 line-clamp-2 pr-6">
+                        <div className="text-sm text-gray-700 font-medium mb-1 max-h-24 overflow-y-auto pr-6 whitespace-pre-wrap">
                             {ann.content}
                         </div>
                         <div className="flex justify-between items-center mt-1">
