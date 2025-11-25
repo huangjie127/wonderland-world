@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2 } from "@/lib/r2";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
+import TextToSVG from "text-to-svg";
 
 export async function POST(request) {
   try {
@@ -18,17 +19,8 @@ export async function POST(request) {
         watermarkText = `OCBase ${watermarkText}`;
     }
 
-    // Escape XML special characters to prevent SVG breakage
-    const escapedWatermarkText = watermarkText.replace(/[<>&'"]/g, function (c) {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
-        }
-    });
-
+    // No need to escape XML special characters for TextToSVG as it handles text content
+    
     if (!file) {
       return NextResponse.json(
         { error: "Missing file" },
@@ -39,7 +31,6 @@ export async function POST(request) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // 1. Resize first to get consistent dimensions
-    // Improved watermark logic: dynamic sizing and shadow
     const resizedBuffer = await sharp(buffer)
       .resize(1080, null, {
         withoutEnlargement: true,
@@ -55,32 +46,31 @@ export async function POST(request) {
     const fontSize = Math.max(20, Math.floor(width * 0.04));
     const margin = Math.floor(fontSize * 0.5);
     
-    // Create SVG with text shadow for better visibility
-    // Using inline attributes to avoid any CSS parsing issues in sharp/librsvg
+    // Load font and generate SVG path
+    // Using SimHei (Chinese font) directly to avoid system font rendering issues
+    const textToSVG = TextToSVG.loadSync('C:/Windows/Fonts/simhei.ttf');
+    
+    const optionsMain = { 
+        x: width - margin, 
+        y: height - margin, 
+        fontSize: fontSize, 
+        anchor: 'right bottom'
+    };
+    
+    const optionsShadow = { 
+        x: width - margin + 2, 
+        y: height - margin + 2, 
+        fontSize: fontSize, 
+        anchor: 'right bottom'
+    };
+
+    const dMain = textToSVG.getD(watermarkText, optionsMain);
+    const dShadow = textToSVG.getD(watermarkText, optionsShadow);
+
     const svgImage = `
-      <svg width="${width}" height="${height}">
-        <!-- Shadow Layer -->
-        <text 
-          x="${width - margin + 2}" 
-          y="${height - margin + 2}" 
-          text-anchor="end" 
-          font-size="${fontSize}" 
-          font-weight="bold" 
-          font-family="Microsoft YaHei, SimHei, PingFang SC, sans-serif"
-          fill="#000000" 
-          fill-opacity="0.8"
-        >${escapedWatermarkText}</text>
-        <!-- Main Text Layer -->
-        <text 
-          x="${width - margin}" 
-          y="${height - margin}" 
-          text-anchor="end" 
-          font-size="${fontSize}" 
-          font-weight="bold" 
-          font-family="Microsoft YaHei, SimHei, PingFang SC, sans-serif"
-          fill="#FFFFFF" 
-          fill-opacity="0.9"
-        >${escapedWatermarkText}</text>
+      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <path d="${dShadow}" fill="#000000" fill-opacity="0.8" />
+        <path d="${dMain}" fill="#FFFFFF" fill-opacity="0.9" />
       </svg>
     `;
 
