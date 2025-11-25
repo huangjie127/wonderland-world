@@ -30,27 +30,61 @@ export async function POST(request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 1. 处理图片：调整大小 + 添加水印
-    const processedImageBuffer = await sharp(buffer)
-      .resize(1080, null, { // 限制宽度为 1080px，高度自适应
-        withoutEnlargement: true, // 如果原图小于 1080px，不放大
+    // 1. Resize first to get consistent dimensions
+    const resizedBuffer = await sharp(buffer)
+      .resize(1080, null, {
+        withoutEnlargement: true,
         fit: 'inside'
       })
+      .toBuffer();
+
+    const metadata = await sharp(resizedBuffer).metadata();
+    const width = metadata.width;
+    const height = metadata.height;
+
+    // Calculate font size based on image width (e.g., 4% of width)
+    const fontSize = Math.max(20, Math.floor(width * 0.04));
+    const margin = Math.floor(fontSize * 0.5);
+    
+    // Create SVG with text shadow for better visibility
+    const svgImage = `
+      <svg width="${width}" height="${height}">
+        <style>
+          .text { 
+            fill: rgba(255, 255, 255, 0.8); 
+            font-size: ${fontSize}px; 
+            font-weight: bold; 
+            font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+          }
+        </style>
+        <!-- Shadow/Stroke effect by duplicating text -->
+        <defs>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="black" flood-opacity="0.8"/>
+          </filter>
+        </defs>
+        <text 
+          x="${width - margin}" 
+          y="${height - margin}" 
+          text-anchor="end" 
+          class="text"
+          filter="url(#shadow)"
+        >${escapedWatermarkText}</text>
+      </svg>
+    `;
+
+    // 2. Composite watermark
+    const processedImageBuffer = await sharp(resizedBuffer)
       .composite([
         {
-          input: Buffer.from(
-            `<svg width="500" height="100">
-              <style>
-                .title { fill: rgba(255, 255, 255, 0.5); font-size: 40px; font-weight: bold; font-family: sans-serif; }
-              </style>
-              <text x="50%" y="50%" text-anchor="middle" class="title">${escapedWatermarkText}</text>
-            </svg>`
-          ),
-          gravity: 'southeast', // 水印位置：右下角
+          input: Buffer.from(svgImage),
+          top: 0,
+          left: 0,
           blend: 'over'
         }
       ])
-      .jpeg({ quality: 85 }) // 转换为 JPEG，质量 85
+      .jpeg({ quality: 85 })
       .toBuffer();
 
     // 2. 生成唯一文件名
