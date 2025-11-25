@@ -56,37 +56,30 @@ export async function POST(request) {
     const margin = Math.floor(fontSize * 0.5);
     
     // Create SVG with text shadow for better visibility
-    // Using simple duplicate text for shadow instead of filters for maximum compatibility
+    // Using inline attributes to avoid any CSS parsing issues in sharp/librsvg
     const svgImage = `
       <svg width="${width}" height="${height}">
-        <style>
-          .text { 
-            font-size: ${fontSize}px; 
-            font-weight: bold; 
-            font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
-          }
-          .shadow {
-            fill: #000000;
-            fill-opacity: 0.8;
-          }
-          .main {
-            fill: #FFFFFF;
-            fill-opacity: 0.9;
-          }
-        </style>
         <!-- Shadow Layer -->
         <text 
           x="${width - margin + 2}" 
           y="${height - margin + 2}" 
           text-anchor="end" 
-          class="text shadow"
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          font-family="Microsoft YaHei, SimHei, PingFang SC, sans-serif"
+          fill="#000000" 
+          fill-opacity="0.8"
         >${escapedWatermarkText}</text>
         <!-- Main Text Layer -->
         <text 
           x="${width - margin}" 
           y="${height - margin}" 
           text-anchor="end" 
-          class="text main"
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          font-family="Microsoft YaHei, SimHei, PingFang SC, sans-serif"
+          fill="#FFFFFF" 
+          fill-opacity="0.9"
         >${escapedWatermarkText}</text>
       </svg>
     `;
