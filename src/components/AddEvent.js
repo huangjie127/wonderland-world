@@ -46,11 +46,13 @@ export default function AddEvent({ characterId }) {
         finalImageUrl = publicUrl;
       }
 
-      const { error } = await supabase.from("character_event_logs").insert([{
+      const { error } = await supabase.from("character_events").insert([{
         character_id: characterId,
         title,
         content,
         image_url: finalImageUrl || null,
+        type: "SELF", // Default type
+        is_public: true, // Default to public for this legacy component
       }]);
       if (error) throw error;
       
