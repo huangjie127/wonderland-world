@@ -10,6 +10,17 @@ export async function POST(request) {
     const file = formData.get("file");
     const watermarkText = formData.get("watermarkText") || "OCBase";
 
+    // Escape XML special characters to prevent SVG breakage
+    const escapedWatermarkText = watermarkText.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+
     if (!file) {
       return NextResponse.json(
         { error: "Missing file" },
@@ -32,7 +43,7 @@ export async function POST(request) {
               <style>
                 .title { fill: rgba(255, 255, 255, 0.5); font-size: 40px; font-weight: bold; font-family: sans-serif; }
               </style>
-              <text x="50%" y="50%" text-anchor="middle" class="title">${watermarkText}</text>
+              <text x="50%" y="50%" text-anchor="middle" class="title">${escapedWatermarkText}</text>
             </svg>`
           ),
           gravity: 'southeast', // 水印位置：右下角

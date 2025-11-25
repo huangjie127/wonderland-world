@@ -72,27 +72,24 @@ export default function AlbumDetailPage() {
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substr(2, 9)}.${fileExt}`;
-        const filePath = `${user.id}/${character.id}/${fileName}`;
+        
+        // 使用新的水印上传 API
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("watermarkText", `OCBase ${character.name}`);
 
-        // 上传文件到 Storage
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, file, {
-            upsert: false,
-            contentType: file.type,
-          });
+        const uploadRes = await fetch("/api/upload-watermark", {
+          method: "POST",
+          body: formData,
+        });
 
-        if (uploadError) throw uploadError;
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to upload image");
+        }
 
-        // 获取公开 URL
-        const { data } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-        const imageUrl = data?.publicUrl;
+        const { publicUrl } = await uploadRes.json();
+        const imageUrl = publicUrl;
 
         // 创建相册记录
         const { error: insertError } = await supabase
