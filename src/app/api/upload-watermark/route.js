@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import TextToSVG from "text-to-svg";
 
+import path from "path";
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -47,8 +49,9 @@ export async function POST(request) {
     const margin = Math.floor(fontSize * 0.5);
     
     // Load font and generate SVG path
-    // Using SimHei (Chinese font) directly to avoid system font rendering issues
-    const textToSVG = TextToSVG.loadSync('C:/Windows/Fonts/simhei.ttf');
+    // Use local font file to avoid system permission issues
+    const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'simhei.ttf');
+    const textToSVG = TextToSVG.loadSync(fontPath);
     
     const optionsMain = { 
         x: width - margin, 
