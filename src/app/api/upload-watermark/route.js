@@ -44,9 +44,10 @@ export async function POST(request) {
     const width = metadata.width;
     const height = metadata.height;
 
-    // Calculate font size based on image width (e.g., 4% of width)
-    const fontSize = Math.max(20, Math.floor(width * 0.04));
-    const margin = Math.floor(fontSize * 0.5);
+    // Calculate font size based on image width (e.g., 3% of width - slightly smaller for elegance)
+    const fontSize = Math.max(16, Math.floor(width * 0.03));
+    const margin = Math.floor(fontSize * 0.8);
+    const shadowOffset = Math.max(1, Math.floor(fontSize * 0.08));
     
     // Load font and generate SVG path
     // Use local font file to avoid system permission issues
@@ -61,8 +62,8 @@ export async function POST(request) {
     };
     
     const optionsShadow = { 
-        x: width - margin + 2, 
-        y: height - margin + 2, 
+        x: width - margin + shadowOffset, 
+        y: height - margin + shadowOffset, 
         fontSize: fontSize, 
         anchor: 'right bottom'
     };
@@ -70,10 +71,11 @@ export async function POST(request) {
     const dMain = textToSVG.getD(watermarkText, optionsMain);
     const dShadow = textToSVG.getD(watermarkText, optionsShadow);
 
+    // Elegant style: Semi-transparent white with very subtle dark shadow
     const svgImage = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <path d="${dShadow}" fill="#000000" fill-opacity="0.8" />
-        <path d="${dMain}" fill="#FFFFFF" fill-opacity="0.9" />
+        <path d="${dShadow}" fill="#000000" fill-opacity="0.2" />
+        <path d="${dMain}" fill="#FFFFFF" fill-opacity="0.6" />
       </svg>
     `;
 
