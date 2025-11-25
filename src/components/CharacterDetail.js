@@ -81,6 +81,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
   useEffect(() => {
     fetchData();
+    setIsEditing(false);
   }, [character?.id]);
 
   // 初始化编辑表单
@@ -385,6 +386,18 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             </div>
           </div>
         </div>
+
+        {/* 图片裁剪器 - 必须包含在编辑模式的渲染中 */}
+        {showCropper && tempAvatarSrc && (
+          <ImageCropper
+            imageSrc={tempAvatarSrc}
+            onCropComplete={handleCropComplete}
+            onCancel={() => {
+              setShowCropper(false);
+              setTempAvatarSrc(null);
+            }}
+          />
+        )}
       </div>
     );
   }

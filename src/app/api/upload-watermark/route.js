@@ -44,8 +44,8 @@ export async function POST(request) {
     const width = metadata.width;
     const height = metadata.height;
 
-    // Calculate font size based on image width (e.g., 3% of width - slightly smaller for elegance)
-    const fontSize = Math.max(16, Math.floor(width * 0.03));
+    // Calculate font size based on image width (e.g., 2% of width - smaller for elegance)
+    const fontSize = Math.max(14, Math.floor(width * 0.02));
     const margin = Math.floor(fontSize * 0.8);
     const shadowOffset = Math.max(1, Math.floor(fontSize * 0.08));
     
