@@ -44,7 +44,10 @@ export default function ClientNav() {
           档案馆
         </Link>
         <Link className="font-medium text-gray-600 hover:text-indigo-600" href="/meet">
-          奇遇
+          奇遇（还在开发中）
+        </Link>
+        <Link className="font-medium text-gray-600 hover:text-indigo-600" href="/world">
+          世界频道
         </Link>
       </div>
       <div className="flex items-center gap-4">
