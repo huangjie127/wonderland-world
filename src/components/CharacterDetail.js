@@ -11,7 +11,7 @@ import InteractionDialog from "./InteractionDialog";
 import ImageCropper from "./ImageCropper";
 import LikeButton from "./LikeButton";
 
-export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect }) {
+export default function CharacterDetail({ character, onCharacterUpdated, onCharacterDeleted, onCharacterSelect, onBack }) {
   const { user } = useAuth();
   const isOwner = user?.id === character?.user_id;
   
@@ -417,12 +417,22 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
   // 查看模式
   return (
-    <div className="flex-1 bg-white overflow-y-auto">
+    <div className="flex-1 bg-white overflow-y-auto pb-20 md:pb-0">
       {/* 头部 - 角色信息 */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
-        <div className="flex gap-6 items-start">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 relative">
+        {/* Mobile Back Button */}
+        <button 
+            onClick={onBack}
+            className="md:hidden absolute top-4 left-4 text-white p-2 hover:bg-white/20 rounded-full z-10"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+        </button>
+
+        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start pt-8 md:pt-0">
           {/* 头像 */}
-          <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 border-4 border-white/30">
+          <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 border-4 border-white/30 shadow-lg">
             {character.avatar_url ? (
               <img
                 src={character.avatar_url}
@@ -437,36 +447,39 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           </div>
 
           {/* 基本信息 */}
-          <div className="flex-1">
+          <div className="flex-1 text-center md:text-left">
             <h1 className="text-3xl font-bold mb-2">{character.name}</h1>
             <p className="text-lg opacity-90 mb-4">{character.tagline || "无标语"}</p>
             <p className="text-sm opacity-75">
               创建于 {new Date(character.created_at).toLocaleDateString("zh-CN")}
             </p>
           </div>
+          
+          {/* Actions Row for Mobile (below info) or Desktop (right side) */}
+          <div className="flex flex-wrap justify-center gap-2 mt-2 md:mt-0">
+             {/* 编辑按钮 */}
+            {isOwner && (
+                <button
+                onClick={handleEditClick}
+                className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0 shadow-sm"
+                >
+                ✏️ 编辑
+                </button>
+            )}
 
-          {/* 编辑按钮 */}
-          {isOwner && (
-            <button
-              onClick={handleEditClick}
-              className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition flex-shrink-0"
-            >
-              ✏️ 编辑
-            </button>
-          )}
+            {/* Connect 按钮 */}
+            {user && (
+                <button
+                onClick={() => setShowRelationDialog(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0 shadow-sm border border-purple-400"
+                >
+                🔗 Connect
+                </button>
+            )}
 
-          {/* Connect 按钮 */}
-          {user && (
-            <button
-              onClick={() => setShowRelationDialog(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex-shrink-0"
-            >
-              🔗 Connect
-            </button>
-          )}
-
-          {/* 点赞按钮 */}
-          <LikeButton characterId={character.id} ownerId={character.user_id} />
+            {/* 点赞按钮 */}
+            <LikeButton characterId={character.id} ownerId={character.user_id} />
+          </div>
         </div>
       </div>
 

@@ -118,9 +118,39 @@ export default function WorldChannelPage() {
       .channel('world_chat')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'world_chat' }, 
         async (payload) => {
-            // Fetch the full message with character details
-            // The fetchMessageDetails function handles deduplication
-            fetchMessageDetails(payload.new.id);
+            // Optimization: Check if we already have the character info in our local state
+            // This avoids a DB fetch for every single message if the character has spoken recently
+            const newMessage = payload.new;
+            
+            // 1. Check if it's an anonymous message (no fetch needed)
+            if (newMessage.is_anonymous) {
+                setMessages(prev => {
+                    if (prev.some(msg => msg.id === newMessage.id)) return prev;
+                    return [...prev, { ...newMessage, character: null }];
+                });
+                scrollToBottom();
+                return;
+            }
+
+            // 2. Check if we have this character in our 'messages' list already
+            // We can reuse the character object from a previous message
+            const existingMessageWithChar = messages.find(
+                m => m.character_id === newMessage.character_id && m.character
+            );
+
+            if (existingMessageWithChar) {
+                setMessages(prev => {
+                    if (prev.some(msg => msg.id === newMessage.id)) return prev;
+                    return [...prev, { 
+                        ...newMessage, 
+                        character: existingMessageWithChar.character 
+                    }];
+                });
+                scrollToBottom();
+            } else {
+                // 3. Fallback: Fetch from DB if we don't know this character yet
+                fetchMessageDetails(newMessage.id);
+            }
         }
       )
       .subscribe();

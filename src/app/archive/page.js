@@ -6,32 +6,69 @@ import Link from "next/link";
 import "./archive.css";
 
 export default function ArchivePage() {
-  const [allCharacters, setAllCharacters] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 24;
 
-  // 加载所有角色
-  useEffect(() => {
-    const fetchCharacters = async () => {
+  const fetchCharacters = async (pageNumber, isNewSearch = false) => {
+    if (isNewSearch) {
       setLoading(true);
-      // 获取所有角色（用于社区浏览）
-      const { data: allChars } = await supabase
+    }
+    
+    try {
+      let query = supabase
         .from("characters")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
-      setAllCharacters(allChars || []);
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        if (isNewSearch) {
+          setCharacters(data);
+        } else {
+          setCharacters(prev => [...prev, ...data]);
+        }
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error("Error fetching characters:", err);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
-    fetchCharacters();
+  // 初始加载
+  useEffect(() => {
+    fetchCharacters(0, true);
   }, []);
 
-  const filteredCharacters = allCharacters.filter(char => 
-    char.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 搜索处理 (防抖)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(0);
+      fetchCharacters(0, true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  if (loading) {
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchCharacters(nextPage, false);
+  };
+
+  if (loading && characters.length === 0) {
     return <div className="text-center py-8">加载中...</div>;
   }
 
@@ -59,14 +96,14 @@ export default function ArchivePage() {
             </div>
         </div>
 
-        {filteredCharacters.length === 0 && searchQuery && (
+        {characters.length === 0 && !loading && (
             <div className="text-center py-12 text-gray-500">
-                没有找到名为 "{searchQuery}" 的角色
+                {searchQuery ? `没有找到名为 "${searchQuery}" 的角色` : "暂无角色"}
             </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredCharacters.map((char) => (
+          {characters.map((char) => (
             <Link
               key={char.id}
               href={`/archive/${char.id}`}
@@ -104,9 +141,25 @@ export default function ArchivePage() {
             </Link>
           ))}
         </div>
+
+        {/* Load More Button */}
+        {hasMore && !loading && characters.length > 0 && (
+          <div className="mt-8 text-center">
+            <button
+              onClick={handleLoadMore}
+              className="px-6 py-2 bg-white border border-gray-300 rounded-full text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition shadow-sm font-medium"
+            >
+              加载更多
+            </button>
+          </div>
+        )}
+        
+        {loading && characters.length > 0 && (
+           <div className="mt-8 text-center text-gray-500">加载中...</div>
+        )}
       </section>
 
-      {allCharacters.length === 0 && (
+      {characters.length === 0 && !loading && !searchQuery && (
         <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
           <p className="text-gray-500 text-lg mb-4">还没有任何角色收录</p>
           <Link

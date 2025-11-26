@@ -46,16 +46,37 @@ export default function AddEvent({ characterId }) {
         finalImageUrl = publicUrl;
       }
 
-      const { error } = await supabase.from("character_events").insert([{
-        character_id: characterId,
-        title,
-        content,
-        image_url: finalImageUrl || null,
-        type: "SELF", // Default type
-        is_public: true, // Default to public for this legacy component
-      }]);
-      if (error) throw error;
+      // Use API route instead of direct insert to handle points
+      const res = await fetch("/api/events/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          character_id: characterId,
+          title,
+          content,
+          image_url: finalImageUrl || null,
+          type: "SELF",
+          is_public: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create event");
+      }
+
+      const { pointResult } = await res.json();
       
+      if (pointResult?.leveledUp) {
+        // We can dispatch a custom event or just alert for now, 
+        // but ideally the global listener will pick it up if we store it in state/context.
+        // For simplicity, we'll rely on the global check or just show a special alert here.
+        alert(`🎉 恭喜升级！当前等级：${pointResult.levelTitle} (Lv.${pointResult.newLevel})`);
+      } else if (pointResult) {
+        // Optional: Show points gained
+        // alert(`发布成功！获得 ${pointResult.pointsAdded} 积分`);
+      }
+
       setTitle("");
       setContent("");
       setImageUrl("");

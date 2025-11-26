@@ -22,6 +22,9 @@ export default function HomePage() {
   const [pendingCount, setPendingCount] = useState(0);
   const [terminationCount, setTerminationCount] = useState(0);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  
+  // Mobile View State
+  const [mobileView, setMobileView] = useState("list"); // 'list' | 'detail'
 
   // 重定向未登录用户
   useEffect(() => {
@@ -43,7 +46,7 @@ export default function HomePage() {
 
       setCharacters(data || []);
       
-      // 默认选中第一个角色
+      // 默认选中第一个角色 (Desktop only logic ideally, but fine for now)
       if (data && data.length > 0 && !selectedCharacterId) {
         setSelectedCharacterId(data[0].id);
       }
@@ -91,6 +94,7 @@ export default function HomePage() {
   const handleCharacterCreated = (newCharacter) => {
     setCharacters((prev) => [newCharacter, ...prev]);
     setSelectedCharacterId(newCharacter.id);
+    setMobileView("detail"); // Switch to detail view on mobile
     setShowCreateForm(false);
   };
 
@@ -107,8 +111,18 @@ export default function HomePage() {
     // 如果删除的是当前选中的角色，选择下一个
     if (selectedCharacterId === deletedCharacterId) {
       const remainingCharacters = characters.filter((c) => c.id !== deletedCharacterId);
-      setSelectedCharacterId(remainingCharacters.length > 0 ? remainingCharacters[0].id : null);
+      if (remainingCharacters.length > 0) {
+          setSelectedCharacterId(remainingCharacters[0].id);
+      } else {
+          setSelectedCharacterId(null);
+          setMobileView("list"); // Go back to list if no characters
+      }
     }
+  };
+
+  const handleCharacterSelect = (id) => {
+      setSelectedCharacterId(id);
+      setMobileView("detail");
   };
 
   const selectedCharacter = characters.find((c) => c.id === selectedCharacterId);
@@ -124,12 +138,12 @@ export default function HomePage() {
   // 如果显示创建表单
   if (showCreateForm) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto p-4 pb-20">
         <button
           onClick={() => setShowCreateForm(false)}
-          className="mb-4 text-gray-600 hover:text-gray-800 font-semibold"
+          className="mb-4 text-gray-600 hover:text-gray-800 font-semibold flex items-center gap-1"
         >
-          ← 返回
+          <span>←</span> 返回
         </button>
         <CreateCharacter onCreated={handleCharacterCreated} />
       </div>
@@ -137,32 +151,35 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-[calc(100vh-64px)] md:h-screen bg-gray-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* 左侧导航栏 */}
-      <CharacterSidebar
-        characters={characters}
-        selectedCharacterId={selectedCharacterId}
-        onSelectCharacter={setSelectedCharacterId}
-        onCreateNew={() => setShowCreateForm(true)}
-        pendingCount={pendingCount}
-        terminationCount={terminationCount}
-        unreadMsgCount={unreadMsgCount}
-        onShowNotifications={() => setShowNotifications(true)}
-        onShowTerminations={() => setShowTerminations(true)}
-        onOpenMailbox={() => {
-            // 打开信箱时清空未读计数（视觉上）
-            // 实际清空会在 MailboxDialog 内部调用 markAllAsRead
-            setUnreadMsgCount(0);
-        }}
-      />
+      <div className={`${mobileView === 'detail' ? 'hidden md:flex' : 'flex'} w-full md:w-auto flex-col h-full`}>
+        <CharacterSidebar
+            characters={characters}
+            selectedCharacterId={selectedCharacterId}
+            onSelectCharacter={handleCharacterSelect}
+            onCreateNew={() => setShowCreateForm(true)}
+            pendingCount={pendingCount}
+            terminationCount={terminationCount}
+            unreadMsgCount={unreadMsgCount}
+            onShowNotifications={() => setShowNotifications(true)}
+            onShowTerminations={() => setShowTerminations(true)}
+            onOpenMailbox={() => {
+                setUnreadMsgCount(0);
+            }}
+        />
+      </div>
 
       {/* 右侧内容区 */}
-      <CharacterDetail 
-        character={selectedCharacter} 
-        onCharacterUpdated={handleCharacterUpdated}
-        onCharacterDeleted={handleCharacterDeleted}
-        onCharacterSelect={setSelectedCharacterId}
-      />
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 h-full overflow-hidden`}>
+        <CharacterDetail 
+            character={selectedCharacter} 
+            onCharacterUpdated={handleCharacterUpdated}
+            onCharacterDeleted={handleCharacterDeleted}
+            onCharacterSelect={handleCharacterSelect}
+            onBack={() => setMobileView("list")} // Pass back handler
+        />
+      </div>
 
       {/* 关系通知对话框 */}
       <RelationshipNotifications

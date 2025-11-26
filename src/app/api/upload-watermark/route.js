@@ -61,7 +61,13 @@ export async function POST(request) {
         // Load font and generate SVG path
         // Use local font file to avoid system permission issues
         const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'simhei.ttf');
-        const textToSVG = TextToSVG.loadSync(fontPath);
+        let textToSVG;
+        try {
+            textToSVG = TextToSVG.loadSync(fontPath);
+        } catch (e) {
+            console.warn("Failed to load custom font, falling back to default:", e);
+            textToSVG = TextToSVG.loadSync(); // Fallback to default font
+        }
         
         const optionsMain = { 
             x: width - margin, 
