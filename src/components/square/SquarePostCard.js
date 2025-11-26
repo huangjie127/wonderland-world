@@ -140,7 +140,10 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
   };
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 relative group hover:shadow-md transition-all duration-300">
+      {/* Top decorative line */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      
       <div className="p-3 md:p-4">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3 relative">

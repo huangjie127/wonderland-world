@@ -9,6 +9,22 @@ import BigQuestionBox from "@/components/square/BigQuestionBox";
 import CreatePostDialog from "@/components/square/CreatePostDialog";
 import SquarePostCard from "@/components/square/SquarePostCard";
 
+const BackgroundDecoration = () => (
+  <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    {/* Top Left Blob */}
+    <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-gradient-to-br from-indigo-100/40 to-purple-100/40 rounded-full blur-3xl animate-pulse-slow" />
+    {/* Bottom Right Blob */}
+    <div className="absolute top-[20%] -right-[10%] w-[60vw] h-[60vw] bg-gradient-to-bl from-pink-100/30 to-yellow-50/30 rounded-full blur-3xl" />
+    {/* Grid Pattern */}
+    <div className="absolute inset-0 opacity-[0.03]" 
+         style={{ 
+             backgroundImage: 'radial-gradient(#4f46e5 1px, transparent 1px)', 
+             backgroundSize: '24px 24px' 
+         }} 
+    />
+  </div>
+);
+
 export default function SquarePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -87,9 +103,11 @@ export default function SquarePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen bg-transparent pb-[calc(5rem+env(safe-area-inset-bottom))] relative">
+      <BackgroundDecoration />
       
       {/* 2. Big Question Box */}
+      <div className="relative z-10">
       <BigQuestionBox 
         onOpen={handleOpenCreate} 
         hasCharacter={characters.length > 0} 
@@ -100,9 +118,16 @@ export default function SquarePage() {
         
         {/* Left Column: Dynamic Pool */}
         <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-lg font-bold text-gray-700">最新动态</h2>
-            <button onClick={() => window.location.reload()} className="text-sm text-indigo-500 active:text-indigo-700 md:hover:underline">刷新</button>
+            <div className="flex items-center justify-between mb-6 px-2">
+                <div className="relative">
+                    <h2 className="text-xl font-bold text-gray-800 relative z-10 pl-2">
+                        <span className="text-2xl mr-2">✨</span>最新动态
+                    </h2>
+                    <div className="absolute bottom-1 left-0 w-full h-3 bg-yellow-200/60 -skew-x-12 -z-0 rounded-sm"></div>
+                </div>
+                <button onClick={() => window.location.reload()} className="text-sm bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100 text-indigo-500 active:text-indigo-700 hover:shadow-md transition-all flex items-center gap-1">
+                    <span>🔄</span> 刷新
+                </button>
             </div>
 
             {loading ? (
@@ -131,14 +156,22 @@ export default function SquarePage() {
         {/* Right Column: My Records */}
         <div className="hidden lg:block">
             <div className="sticky top-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 border-b border-gray-50 bg-gray-50/50">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                            <span>📒</span> 我的足迹
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-indigo-50 overflow-hidden relative group hover:shadow-md transition-all duration-300">
+                    {/* Decorative Tape */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-indigo-100/50 rotate-2 border-l border-r border-white/50 backdrop-blur-md z-10"></div>
+
+                    <div className="p-4 border-b border-indigo-50 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 flex items-center justify-between">
+                        <h3 className="font-bold text-indigo-900 flex items-center gap-2">
+                            <span className="text-xl">📒</span> 我的足迹
                         </h3>
+                        <div className="flex gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-indigo-300/50"></div>
+                            <div className="w-2 h-2 rounded-full bg-pink-300/50"></div>
+                            <div className="w-2 h-2 rounded-full bg-yellow-300/50"></div>
+                        </div>
                     </div>
                     
-                    <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+                    <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
                         {!user ? (
                             <div className="text-center py-8 text-gray-400 text-sm">
                                 <p className="mb-2">登录后查看我的动态</p>
@@ -169,6 +202,7 @@ export default function SquarePage() {
             </div>
         </div>
 
+      </div>
       </div>
 
       {/* Create Dialog */}
