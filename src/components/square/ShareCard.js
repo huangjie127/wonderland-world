@@ -109,30 +109,81 @@ export default function ShareCard({
           {/* The actual card to be captured */}
           <div 
             ref={cardRef}
-            className="w-[375px] bg-[#fdfbf7] relative overflow-hidden flex flex-col"
+            className="w-[375px] relative overflow-hidden flex flex-col"
             style={{ 
               minHeight: "600px",
-              backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')",
+              backgroundColor: '#fdfbf7',
               color: '#1f2937'
             }}
           >
-            {/* Decorative Border */}
-            <div className="absolute inset-0 border-[12px] border-transparent pointer-events-none z-20"
-                 style={{ borderImage: "url(https://www.transparenttextures.com/patterns/rough-cloth.png) 30 round" }}>
+            {/* GRIS Style Background: Watercolor Clouds */}
+            <div className="absolute inset-0 z-0" style={{
+                background: 'linear-gradient(180deg, #fff1f2 0%, #fdfbf7 50%, #f0f9ff 100%)', // Pale pink -> Cream -> Pale Blue
+            }}></div>
+
+            {/* Watercolor Blob 1 (Teal/Blue) - Top Right */}
+            <div className="absolute top-[-10%] right-[-20%] w-[400px] h-[400px] rounded-full z-0"
+                style={{
+                    background: 'radial-gradient(circle, rgba(204,251,241,0.4) 0%, rgba(204,251,241,0) 70%)',
+                    filter: 'blur(60px)'
+                }}
+            ></div>
+
+            {/* Watercolor Blob 2 (Pink/Rose) - Bottom Left */}
+            <div className="absolute bottom-[10%] left-[-10%] w-[350px] h-[350px] rounded-full z-0"
+                style={{
+                    background: 'radial-gradient(circle, rgba(253,164,175,0.2) 0%, rgba(253,164,175,0) 70%)',
+                    filter: 'blur(50px)'
+                }}
+            ></div>
+
+            {/* Geometric Sun/Moon (GRIS signature) - Centered & Subtle */}
+            <div className="absolute top-[12%] left-1/2 -translate-x-1/2 w-56 h-56 rounded-full z-0"
+                style={{
+                    backgroundColor: 'rgba(255,255,255,0.6)',
+                    boxShadow: '0 0 40px rgba(255,255,255,0.8)'
+                }}
+            ></div>
+            
+            {/* Vertical Line - Structure */}
+            <div className="absolute top-8 bottom-8 left-8 w-px z-0" 
+                 style={{ 
+                     background: 'linear-gradient(180deg, transparent, rgba(31, 41, 55, 0.1), transparent)' 
+                 }}>
             </div>
 
-            {/* Watercolor Blobs (Background) */}
-            <div className="absolute top-[-50px] right-[-50px] w-40 h-40 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(199, 210, 254, 0.3)' }}></div>
-            <div className="absolute bottom-[-50px] left-[-50px] w-40 h-40 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(251, 207, 232, 0.3)' }}></div>
+            {/* Plants (SVG) - Bottom Left */}
+            <div className="absolute bottom-0 left-0 z-0 opacity-30 pointer-events-none" style={{ width: '160px', height: '160px' }}>
+                <svg viewBox="0 0 100 100" fill="none" stroke="#4b5563" strokeWidth="0.5" style={{ width: '100%', height: '100%' }}>
+                     {/* Stem 1 */}
+                     <path d="M20 100 Q 25 70 10 40" />
+                     <circle cx="10" cy="40" r="2" fill="#4b5563" stroke="none" opacity="0.6" />
+                     {/* Stem 2 */}
+                     <path d="M20 100 Q 35 60 45 30" />
+                     <circle cx="45" cy="30" r="3" fill="#4b5563" stroke="none" opacity="0.6" />
+                     {/* Stem 3 */}
+                     <path d="M20 100 Q 10 80 0 60" />
+                     <circle cx="0" cy="60" r="1.5" fill="#4b5563" stroke="none" opacity="0.6" />
+                </svg>
+            </div>
+            
+            {/* Plants (SVG) - Bottom Right */}
+            <div className="absolute bottom-0 right-0 z-0 opacity-30 pointer-events-none" style={{ width: '140px', height: '140px', transform: 'scaleX(-1)' }}>
+                <svg viewBox="0 0 100 100" fill="none" stroke="#4b5563" strokeWidth="0.5" style={{ width: '100%', height: '100%' }}>
+                     <path d="M80 100 Q 70 60 90 30" />
+                     <circle cx="90" cy="30" r="2.5" fill="#4b5563" stroke="none" opacity="0.6" />
+                     <path d="M80 100 Q 90 70 100 50" />
+                     <circle cx="100" cy="50" r="2" fill="#4b5563" stroke="none" opacity="0.6" />
+                </svg>
+            </div>
 
             {/* Header */}
-            <div className="p-8 pb-4 flex items-center gap-4 z-10">
+            <div className="p-8 pb-4 flex items-center gap-4 z-10 relative">
               <div 
-                className="w-16 h-16 rounded-full border-4 overflow-hidden shrink-0" 
+                className="w-14 h-14 rounded-full overflow-hidden shrink-0" 
                 style={{ 
-                    backgroundColor: '#e5e7eb',
-                    borderColor: '#ffffff',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)'
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    backgroundColor: '#f3f4f6'
                 }}
               >
                 <img 
@@ -147,36 +198,34 @@ export default function ShareCard({
                 />
               </div>
               <div>
-                <h2 className="text-xl font-bold leading-tight" style={{ color: '#111827' }}>{username}</h2>
-                <div className="text-xs mt-1 font-serif italic" style={{ color: '#6b7280' }}>
-                  {new Date(createdAt).toLocaleDateString("zh-CN")} · OCbase
+                <h2 className="text-lg font-bold tracking-wide" style={{ color: '#374151', fontFamily: 'serif' }}>{username}</h2>
+                <div className="text-[10px] mt-1 tracking-widest uppercase opacity-60" style={{ color: '#4b5563' }}>
+                  {new Date(createdAt).toLocaleDateString("zh-CN").replace(/\//g, '.')}
                 </div>
               </div>
             </div>
 
             {/* Content */}
-            <div className="px-8 py-2 flex-1 z-10 flex flex-col">
-              {/* Tags */}
+            <div className="px-8 py-2 flex-1 z-10 flex flex-col relative">
+              {/* Tags - Minimalist */}
               {(worldTag || mood || tone) && (
-                <div className="flex flex-wrap gap-2 mb-4 opacity-80">
-                  {worldTag && <span className="px-2 py-0.5 text-xs rounded-full border" style={{ backgroundColor: 'rgba(224, 231, 255, 0.5)', color: '#4338ca', borderColor: '#e0e7ff' }}>{worldTag}</span>}
-                  {mood && <span className="px-2 py-0.5 text-xs rounded-full border" style={{ backgroundColor: 'rgba(252, 231, 243, 0.5)', color: '#be185d', borderColor: '#fce7f3' }}>#{mood}</span>}
+                <div className="flex flex-wrap gap-2 mb-6 opacity-70">
+                  {worldTag && <span className="px-2 py-0.5 text-[10px] border rounded-sm" style={{ backgroundColor: 'transparent', borderColor: '#c7d2fe', color: '#3730a3' }}>{worldTag}</span>}
+                  {mood && <span className="px-2 py-0.5 text-[10px] border rounded-sm" style={{ backgroundColor: 'transparent', borderColor: '#fbcfe8', color: '#9d174d' }}>#{mood}</span>}
                 </div>
               )}
 
-              {/* Text */}
-              <div className="leading-relaxed font-serif text-lg whitespace-pre-wrap mb-6" style={{ color: '#374151' }}>
+              {/* Text - Elegant Serif */}
+              <div className="leading-loose font-serif text-base whitespace-pre-wrap mb-8" style={{ color: '#1f2937' }}>
                 {renderContent(contentText)}
               </div>
 
-              {/* Image */}
+              {/* Image - Clean Frame */}
               {contentImageUrl && (
                 <div 
-                    className="mb-6 rounded-lg overflow-hidden border-4 relative" 
+                    className="mb-8 overflow-hidden relative" 
                     style={{ 
-                        backgroundColor: '#f3f4f6',
-                        borderColor: '#ffffff',
-                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)'
                     }}
                 >
                   <img 
@@ -189,12 +238,11 @@ export default function ShareCard({
               )}
             </div>
 
-            {/* Footer */}
-            <div className="p-8 pt-4 mt-auto z-10 text-center">
-              <div className="w-full h-px mb-4" style={{ background: 'linear-gradient(to right, transparent, #d1d5db, transparent)' }}></div>
-              <div className="flex items-center justify-center gap-2 font-serif" style={{ color: '#9ca3af' }}>
-                <span className="text-xl">🏰</span>
-                <span className="text-sm tracking-widest uppercase">OCbase · 世界的碎片</span>
+            {/* Footer - Minimalist */}
+            <div className="p-8 pt-4 mt-auto z-10 text-center relative">
+              <div className="flex flex-col items-center justify-center gap-2" style={{ color: '#9ca3af' }}>
+                <div className="w-1 h-8 mb-2" style={{ backgroundColor: '#e0e7ff' }}></div>
+                <span className="text-[10px] tracking-[0.3em] uppercase font-serif">Wonderland · OCbase</span>
               </div>
             </div>
           </div>

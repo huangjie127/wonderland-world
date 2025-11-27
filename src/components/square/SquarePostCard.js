@@ -2,14 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import ShareCard from "./ShareCard";
 
-export default function SquarePostCard({ post, currentUserId, onDelete }) {
+export default function SquarePostCard({ post, currentUserId, onDelete, onShare }) {
   const [likes, setLikes] = useState(post.likes_count || 0);
   const [isLiked, setIsLiked] = useState(false); // In real app, check if user liked
   const [isAnimating, setIsAnimating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showShareCard, setShowShareCard] = useState(false);
 
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
@@ -306,27 +304,13 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
           </button>
 
           <button 
-            onClick={() => setShowShareCard(true)}
+            onClick={() => onShare && onShare(post)}
             className="flex items-center gap-1.5 text-sm font-medium text-gray-400 active:text-indigo-500 md:hover:text-indigo-500 transition-colors py-1 ml-auto"
             title="生成分享卡片"
           >
             <span>分享</span>
           </button>
         </div>
-
-        {/* Share Card Modal */}
-        <ShareCard 
-          isOpen={showShareCard}
-          onClose={() => setShowShareCard(false)}
-          avatarUrl={post.character?.avatar_url}
-          username={post.character?.name}
-          contentText={post.content_text}
-          contentImageUrl={post.image_url}
-          createdAt={post.created_at}
-          worldTag={post.world_tag}
-          mood={post.mood}
-          tone={post.tone}
-        />
 
         {/* Comments Section */}
         {showComments && (

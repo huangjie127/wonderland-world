@@ -8,6 +8,7 @@ import Link from "next/link";
 import BigQuestionBox from "@/components/square/BigQuestionBox";
 import CreatePostDialog from "@/components/square/CreatePostDialog";
 import SquarePostCard from "@/components/square/SquarePostCard";
+import ShareCard from "@/components/square/ShareCard";
 
 const BackgroundDecoration = () => (
   <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -34,6 +35,7 @@ export default function SquarePage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sharePost, setSharePost] = useState(null);
 
   // Fetch Data
   useEffect(() => {
@@ -147,6 +149,7 @@ export default function SquarePage() {
                     post={post} 
                     currentUserId={user?.id} 
                     onDelete={handlePostDeleted}
+                    onShare={setSharePost}
                 />
                 ))}
             </div>
@@ -192,6 +195,7 @@ export default function SquarePage() {
                                             post={post} 
                                             currentUserId={user?.id} 
                                             onDelete={handlePostDeleted}
+                                            onShare={setSharePost}
                                         />
                                     </div>
                                 ))}
@@ -214,6 +218,22 @@ export default function SquarePage() {
         onPostCreated={handlePostCreated}
         initialContent={initialPrompt}
       />
+
+      {/* Share Card Modal - Rendered at root level to avoid transform issues */}
+      {sharePost && (
+        <ShareCard 
+          isOpen={!!sharePost}
+          onClose={() => setSharePost(null)}
+          avatarUrl={sharePost.character?.avatar_url}
+          username={sharePost.character?.name}
+          contentText={sharePost.content_text}
+          contentImageUrl={sharePost.image_url}
+          createdAt={sharePost.created_at}
+          worldTag={sharePost.world_tag}
+          mood={sharePost.mood}
+          tone={sharePost.tone}
+        />
+      )}
     </div>
   );
 }
