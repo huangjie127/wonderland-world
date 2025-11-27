@@ -95,7 +95,7 @@ BEGIN
   -- CASE 2: Root Comment
   ELSE
     -- Get post author
-    SELECT author_user_id, content_text INTO post_author_id, post_title FROM posts WHERE id = NEW.post_id;
+    SELECT author_user_id, content_text INTO post_author_id, post_title FROM character_posts WHERE id = NEW.post_id;
     
     -- Truncate post title for display
     IF length(post_title) > 20 THEN

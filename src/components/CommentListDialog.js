@@ -4,6 +4,130 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/providers";
 
+// Extracted CommentNode component to prevent re-creation on render
+const CommentNode = ({ 
+  node, 
+  depth = 0, 
+  replyingToId, 
+  onReplyClick, 
+  replyContent, 
+  onReplyContentChange, 
+  selectedCharId, 
+  onSelectChar, 
+  myCharacters, 
+  onSubmitReply, 
+  submitting 
+}) => {
+  const isReplying = replyingToId === node.id;
+
+  return (
+    <div className={`relative ${depth > 0 ? "mt-3" : "mt-4"}`}>
+      {depth > 0 && (
+         <div className="absolute -left-3 top-[-12px] bottom-0 w-px bg-gray-100 border-l border-gray-200"></div>
+      )}
+
+      <div className="group/item">
+          <div className="flex gap-3">
+              <div className="flex-shrink-0 pt-1 z-10 relative">
+                  <img 
+                  src={node.guest?.avatar_url || "/default-avatar.png"} 
+                  alt={node.guest?.name}
+                  className="w-8 h-8 rounded-full object-cover border border-gray-100"
+                  />
+              </div>
+              <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between">
+                      <div className="flex items-baseline gap-2">
+                          <span className="font-bold text-gray-800 text-sm">
+                              {node.guest?.name || "未知访客"}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                              {new Date(node.created_at).toLocaleString("zh-CN", {
+                              month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
+                              })}
+                          </span>
+                      </div>
+                      <button 
+                          onClick={() => onReplyClick(node.id)}
+                          className="text-xs text-indigo-500 opacity-0 group-hover/item:opacity-100 transition-opacity px-2 font-medium"
+                      >
+                          回复
+                      </button>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed break-words mt-0.5">
+                      {node.content}
+                  </p>
+              </div>
+          </div>
+
+          {isReplying && (
+              <div className="ml-11 mt-3 animate-in slide-in-from-top-2 fade-in">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
+                      <span className="text-xs text-gray-500 flex-shrink-0">身份:</span>
+                      {myCharacters.map(char => (
+                          <button
+                          key={char.id}
+                          onClick={() => onSelectChar(char.id)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-full border text-xs transition-all flex-shrink-0 ${
+                              selectedCharId === char.id 
+                              ? "bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500" 
+                              : "border-gray-200 text-gray-600 hover:bg-white"
+                          }`}
+                          >
+                          <img src={char.avatar_url || "/default-avatar.png"} className="w-4 h-4 rounded-full object-cover" />
+                          <span>{char.name}</span>
+                          </button>
+                      ))}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                      <input
+                          type="text"
+                          value={replyContent}
+                          onChange={(e) => onReplyContentChange(e.target.value)}
+                          placeholder={`回复 ${node.guest?.name}...`}
+                          className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500"
+                          autoFocus
+                          onKeyDown={(e) => e.key === 'Enter' && onSubmitReply(node.id)}
+                      />
+                      <button
+                          onClick={() => onSubmitReply(node.id)}
+                          disabled={submitting}
+                          className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                          发送
+                      </button>
+                      </div>
+                  </div>
+              </div>
+          )}
+      </div>
+
+      {node.children && node.children.length > 0 && (
+          <div className="pl-3 md:pl-4 ml-3 border-l border-gray-100">
+              {node.children.map(child => (
+                  <CommentNode 
+                    key={child.id} 
+                    node={child} 
+                    depth={depth + 1}
+                    replyingToId={replyingToId}
+                    onReplyClick={onReplyClick}
+                    replyContent={replyContent}
+                    onReplyContentChange={onReplyContentChange}
+                    selectedCharId={selectedCharId}
+                    onSelectChar={onSelectChar}
+                    myCharacters={myCharacters}
+                    onSubmitReply={onSubmitReply}
+                    submitting={submitting}
+                  />
+              ))}
+          </div>
+      )}
+    </div>
+  );
+};
+
 export default function CommentListDialog({ isOpen, onClose, hostCharacterId, hostCharacterName }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
@@ -147,104 +271,6 @@ export default function CommentListDialog({ isOpen, onClose, hostCharacterId, ho
     return roots;
   }, [comments]);
 
-  const CommentNode = ({ node, depth = 0 }) => {
-    const isReplying = replyingToId === node.id;
-
-    return (
-      <div className={`relative ${depth > 0 ? "mt-3" : "mt-4"}`}>
-        {depth > 0 && (
-           <div className="absolute -left-3 top-[-12px] bottom-0 w-px bg-gray-100 border-l border-gray-200"></div>
-        )}
-
-        <div className="group/item">
-            <div className="flex gap-3">
-                <div className="flex-shrink-0 pt-1 z-10 relative">
-                    <img 
-                    src={node.guest?.avatar_url || "/default-avatar.png"} 
-                    alt={node.guest?.name}
-                    className="w-8 h-8 rounded-full object-cover border border-gray-100"
-                    />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold text-gray-800 text-sm">
-                                {node.guest?.name || "未知访客"}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                                {new Date(node.created_at).toLocaleString("zh-CN", {
-                                month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
-                                })}
-                            </span>
-                        </div>
-                        <button 
-                            onClick={() => handleReplyClick(node.id)}
-                            className="text-xs text-indigo-500 opacity-0 group-hover/item:opacity-100 transition-opacity px-2 font-medium"
-                        >
-                            回复
-                        </button>
-                    </div>
-                    <p className="text-gray-700 text-sm leading-relaxed break-words mt-0.5">
-                        {node.content}
-                    </p>
-                </div>
-            </div>
-
-            {isReplying && (
-                <div className="ml-11 mt-3 animate-in slide-in-from-top-2 fade-in">
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
-                        <span className="text-xs text-gray-500 flex-shrink-0">身份:</span>
-                        {myCharacters.map(char => (
-                            <button
-                            key={char.id}
-                            onClick={() => setSelectedCharId(char.id)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full border text-xs transition-all flex-shrink-0 ${
-                                selectedCharId === char.id 
-                                ? "bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500" 
-                                : "border-gray-200 text-gray-600 hover:bg-white"
-                            }`}
-                            >
-                            <img src={char.avatar_url || "/default-avatar.png"} className="w-4 h-4 rounded-full object-cover" />
-                            <span>{char.name}</span>
-                            </button>
-                        ))}
-                        </div>
-                        
-                        <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            placeholder={`回复 ${node.guest?.name}...`}
-                            className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500"
-                            autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply(node.id)}
-                        />
-                        <button
-                            onClick={() => handleSubmitReply(node.id)}
-                            disabled={submitting}
-                            className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                            发送
-                        </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-
-        {node.children && node.children.length > 0 && (
-            <div className="pl-3 md:pl-4 ml-3 border-l border-gray-100">
-                {node.children.map(child => (
-                    <CommentNode key={child.id} node={child} depth={depth + 1} />
-                ))}
-            </div>
-        )}
-      </div>
-    );
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -274,7 +300,19 @@ export default function CommentListDialog({ isOpen, onClose, hostCharacterId, ho
             </div>
           ) : (
             commentTree.map(root => (
-              <CommentNode key={root.id} node={root} />
+              <CommentNode 
+                key={root.id} 
+                node={root} 
+                replyingToId={replyingToId}
+                onReplyClick={handleReplyClick}
+                replyContent={replyContent}
+                onReplyContentChange={setReplyContent}
+                selectedCharId={selectedCharId}
+                onSelectChar={setSelectedCharId}
+                myCharacters={myCharacters}
+                onSubmitReply={handleSubmitReply}
+                submitting={submitting}
+              />
             ))
           )}
         </div>
