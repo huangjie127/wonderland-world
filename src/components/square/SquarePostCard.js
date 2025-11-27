@@ -1,13 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ShareCard from "./ShareCard";
 
 export default function SquarePostCard({ post, currentUserId, onDelete }) {
   const [likes, setLikes] = useState(post.likes_count || 0);
   const [isLiked, setIsLiked] = useState(false); // In real app, check if user liked
   const [isAnimating, setIsAnimating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
+
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [myCharacters, setMyCharacters] = useState([]);
+  const [selectedCommentCharId, setSelectedCommentCharId] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+
+  const commentTree = useMemo(() => {
+    const commentMap = {};
+    const roots = [];
+
+    // 1. Create nodes
+    comments.forEach(c => {
+      commentMap[c.id] = { ...c, children: [] };
+    });
+
+    // 2. Link children
+    comments.forEach(c => {
+      if (c.parent_id && commentMap[c.parent_id]) {
+        commentMap[c.parent_id].children.push(commentMap[c.id]);
+      } else {
+        roots.push(commentMap[c.id]);
+      }
+    });
+
+    // 3. Sort recursively
+    const sortNodes = (nodes) => {
+      nodes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      nodes.forEach(node => sortNodes(node.children));
+    };
+
+    sortNodes(roots);
+    return roots;
+  }, [comments]);
 
   const handleDelete = async () => {
     if (!confirm("确定要删除这条动态吗？")) return;
@@ -59,15 +98,6 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
     }
   };
 
-  // Comments Logic
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [commentLoading, setCommentLoading] = useState(false);
-  const [commentsLoaded, setCommentsLoaded] = useState(false);
-  const [myCharacters, setMyCharacters] = useState([]);
-  const [selectedCommentCharId, setSelectedCommentCharId] = useState(null);
-
   const loadComments = async () => {
     if (commentsLoaded) return;
     try {
@@ -116,7 +146,8 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
                 post_id: post.id,
                 user_id: currentUserId,
                 content: newComment,
-                character_id: selectedCommentCharId
+                character_id: selectedCommentCharId,
+                parent_id: replyingTo?.id
             }),
         });
 
@@ -131,12 +162,61 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
                 character: charInfo // Inject character info immediately
             }]);
             setNewComment("");
+            setReplyingTo(null);
         }
     } catch (err) {
         alert("评论失败");
     } finally {
         setCommentLoading(false);
     }
+  };
+
+  const handleReply = (comment) => {
+    setReplyingTo(comment);
+    // Focus input (simple way)
+    const input = document.getElementById(`comment-input-${post.id}`);
+    if (input) input.focus();
+  };
+
+  // Recursive Comment Component
+  const CommentNode = ({ node, depth = 0 }) => {
+    return (
+      <div className={`relative ${depth > 0 ? "mt-2" : ""}`}>
+        {/* Line connector for nested comments */}
+        {depth > 0 && (
+          <div className="absolute -left-3 top-[-8px] bottom-0 w-px bg-gray-100 border-l border-gray-200"></div>
+        )}
+        
+        <div className="flex gap-2 text-sm items-start group/comment">
+          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 mt-0.5 z-10 relative">
+            <img src={node.character?.avatar_url || "/default-avatar.png"} className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0 break-words">
+            <div className="flex items-baseline justify-between">
+              <span className="font-bold text-gray-700 mr-2 text-xs md:text-sm">
+                {node.character?.name || "未知角色"}
+              </span>
+              <button 
+                onClick={() => handleReply(node)}
+                className="text-xs text-indigo-500 opacity-0 group-hover/comment:opacity-100 transition-opacity px-2"
+              >
+                回复
+              </button>
+            </div>
+            <span className="text-gray-600 block text-xs md:text-sm">{node.content}</span>
+          </div>
+        </div>
+
+        {/* Recursive Children */}
+        {node.children && node.children.length > 0 && (
+          <div className="pl-3 md:pl-4 ml-3 border-l border-gray-100">
+            {node.children.map(child => (
+              <CommentNode key={child.id} node={child} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -224,27 +304,39 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
             <span className="text-lg">💬</span>
             <span>{post.comments_count || comments.length || 0}</span>
           </button>
+
+          <button 
+            onClick={() => setShowShareCard(true)}
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-400 active:text-indigo-500 md:hover:text-indigo-500 transition-colors py-1 ml-auto"
+            title="生成分享卡片"
+          >
+            <span>分享</span>
+          </button>
         </div>
+
+        {/* Share Card Modal */}
+        <ShareCard 
+          isOpen={showShareCard}
+          onClose={() => setShowShareCard(false)}
+          avatarUrl={post.character?.avatar_url}
+          username={post.character?.name}
+          contentText={post.content_text}
+          contentImageUrl={post.image_url}
+          createdAt={post.created_at}
+          worldTag={post.world_tag}
+          mood={post.mood}
+          tone={post.tone}
+        />
 
         {/* Comments Section */}
         {showComments && (
             <div className="mt-3 pt-3 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
-                <div className="space-y-3 mb-3 max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="space-y-4 mb-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
                     {comments.length === 0 ? (
                         <p className="text-center text-xs text-gray-400 py-2">暂无评论，快来抢沙发~</p>
                     ) : (
-                        comments.map(comment => (
-                            <div key={comment.id} className="flex gap-2 text-sm items-start">
-                                <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 mt-0.5">
-                                    <img src={comment.character?.avatar_url || "/default-avatar.png"} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 min-w-0 break-words">
-                                    <span className="font-bold text-gray-700 mr-2">
-                                        {comment.character?.name || "未知角色"}:
-                                    </span>
-                                    <span className="text-gray-600">{comment.content}</span>
-                                </div>
-                            </div>
+                        commentTree.map(root => (
+                            <CommentNode key={root.id} node={root} />
                         ))
                     )}
                 </div>
@@ -270,8 +362,17 @@ export default function SquarePostCard({ post, currentUserId, onDelete }) {
                         </div>
                     )}
 
+                    {/* Replying Indicator */}
+                    {replyingTo && (
+                        <div className="flex justify-between items-center bg-indigo-50 px-3 py-1 rounded text-xs text-indigo-600">
+                            <span>回复 @{replyingTo.character?.name}</span>
+                            <button onClick={() => setReplyingTo(null)} className="hover:text-indigo-800">✕</button>
+                        </div>
+                    )}
+
                     <div className="flex gap-2">
                         <input 
+                            id={`comment-input-${post.id}`}
                             type="text" 
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}

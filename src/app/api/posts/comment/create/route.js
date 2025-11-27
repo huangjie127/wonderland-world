@@ -10,7 +10,7 @@ export async function POST(request) {
   const supabase = createClient(SUPABASE_URL, supabaseServiceKey || SUPABASE_ANON_KEY);
   
   try {
-    const { post_id, user_id, content, character_id } = await request.json();
+    const { post_id, user_id, content, character_id, parent_id } = await request.json();
 
     if (!user_id || !post_id || !content) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -23,7 +23,8 @@ export async function POST(request) {
         post_id, 
         user_id, 
         content,
-        character_id: character_id || null 
+        character_id: character_id || null,
+        parent_id: parent_id || null
       }])
       .select()
       .single();

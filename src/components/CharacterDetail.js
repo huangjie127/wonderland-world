@@ -8,6 +8,7 @@ import RelationshipDialog from "./RelationshipDialog";
 import RelationshipGraph from "./RelationshipGraph";
 import AddEventDialog from "./AddEventDialog";
 import InteractionDialog from "./InteractionDialog";
+import CommentListDialog from "./CommentListDialog";
 import ImageCropper from "./ImageCropper";
 import LikeButton from "./LikeButton";
 
@@ -24,6 +25,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   const [showRelationDialog, setShowRelationDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
+  const [showCommentListDialog, setShowCommentListDialog] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [tempAvatarSrc, setTempAvatarSrc] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null); // Lightbox state
@@ -78,7 +80,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           .eq("host_character_id", character.id)
           .is("event_id", null) // 只获取留言板内容，不获取事件评论
           .order("created_at", { ascending: false })
-          .limit(50),
+          .limit(3), // 只获取最新的3条作为预览
         albumsQuery,
       ]);
 
@@ -611,11 +613,15 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
           {/* 访客留言板 */}
           {activeTab === "interactions" && (
-            <div className="mt-2 max-h-[500px] overflow-y-auto">
+            <div className="mt-2">
               {interactions.length > 0 ? (
-                <div className="">
+                <div className="space-y-2">
                   {interactions.map((interaction) => (
-                    <div key={interaction.id} className="flex gap-3 py-3 border-b border-gray-100 last:border-0 group hover:bg-gray-50 px-2 -mx-2 rounded transition-all duration-200 hover:scale-[1.01]">
+                    <div 
+                      key={interaction.id} 
+                      onClick={() => setShowCommentListDialog(true)}
+                      className="flex gap-3 py-3 border-b border-gray-100 last:border-0 group hover:bg-gray-50 px-2 -mx-2 rounded transition-all duration-200 hover:scale-[1.01] cursor-pointer"
+                    >
                       {/* 访客头像 */}
                       <div className="flex-shrink-0 pt-1">
                         {interaction.guest?.avatar_url ? (
@@ -643,12 +649,19 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                             })}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 leading-relaxed break-words">
+                        <p className="text-sm text-gray-600 leading-relaxed break-words line-clamp-2">
                           {interaction.content}
                         </p>
                       </div>
                     </div>
                   ))}
+                  
+                  <button
+                    onClick={() => setShowCommentListDialog(true)}
+                    className="w-full py-3 text-center text-indigo-600 font-medium text-sm bg-indigo-50 hover:bg-indigo-100 rounded-lg transition mt-4"
+                  >
+                    查看全部留言 / 回复
+                  </button>
                 </div>
               ) : (
                 <div className="text-center py-12 border border-dashed border-gray-200 rounded-lg bg-gray-50">
@@ -771,6 +784,14 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
           setShowInteractionDialog(false);
           fetchData(); // 刷新数据
         }}
+      />
+
+      {/* 留言列表弹窗 */}
+      <CommentListDialog
+        isOpen={showCommentListDialog}
+        onClose={() => setShowCommentListDialog(false)}
+        hostCharacterId={character.id}
+        hostCharacterName={character.name}
       />
 
       {/* 图片裁剪器 */}

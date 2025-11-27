@@ -47,6 +47,8 @@ export default function MailboxDialog({ isOpen, onClose }) {
       case "relationship_termination": return "💔";
       case "interaction": return "💬";
       case "like": return "❤️";
+      case "comment": return "📝";
+      case "reply": return "↩️";
       default: return "📬";
     }
   };
