@@ -77,38 +77,38 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#12131a] border border-gray-700 rounded-lg max-w-md w-full p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white/90 backdrop-blur-md border border-white/60 rounded-2xl max-w-md w-full p-8 shadow-2xl relative">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-300"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
         >
           ✕
         </button>
 
-        <h2 className="text-2xl font-light text-gray-100 mb-6 tracking-widest uppercase text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide text-center font-serif">
           构筑位面
         </h2>
 
-        <div className="mb-6 p-4 bg-black/30 rounded border border-gray-800 flex justify-between items-center">
-          <span className="text-gray-400 text-sm">当前持有: <span className="text-blue-400 font-mono">{coins}</span> 碎片</span>
-          <span className="text-gray-400 text-sm">消耗: <span className="text-red-400 font-mono">-{COST}</span> 碎片</span>
+        <div className="mb-6 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex justify-between items-center">
+          <span className="text-gray-600 text-sm font-medium">当前持有: <span className="text-indigo-600 font-mono font-bold">{coins}</span> 碎片</span>
+          <span className="text-gray-600 text-sm font-medium">消耗: <span className="text-red-500 font-mono font-bold">-{COST}</span> 碎片</span>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900/20 border border-red-800 text-red-400 text-sm rounded">
+          <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-500 text-sm rounded-lg">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">位面名称</label>
+            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-medium">位面名称</label>
             <input
               type="text"
               required
               maxLength={20}
-              className="w-full bg-[#0a0b10] border border-gray-700 rounded px-3 py-2 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
+              className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all shadow-sm"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
               placeholder="给这个世界起个名字..."
@@ -116,12 +116,12 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">场景描述</label>
+            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-medium">场景描述</label>
             <textarea
               required
               maxLength={100}
               rows={3}
-              className="w-full bg-[#0a0b10] border border-gray-700 rounded px-3 py-2 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors resize-none"
+              className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all resize-none shadow-sm"
               value={formData.description}
               onChange={e => setFormData({...formData, description: e.target.value})}
               placeholder="描述这里的景象..."
@@ -130,9 +130,9 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">持续时间</label>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-medium">持续时间</label>
               <select
-                className="w-full bg-[#0a0b10] border border-gray-700 rounded px-3 py-2 text-gray-200 outline-none"
+                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 shadow-sm"
                 value={formData.duration}
                 onChange={e => setFormData({...formData, duration: e.target.value})}
               >
@@ -143,9 +143,9 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">最大人数</label>
+              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-medium">最大人数</label>
               <select
-                className="w-full bg-[#0a0b10] border border-gray-700 rounded px-3 py-2 text-gray-200 outline-none"
+                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 shadow-sm"
                 value={formData.maxPlayers}
                 onChange={e => setFormData({...formData, maxPlayers: e.target.value})}
               >
@@ -159,7 +159,7 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
           <button
             type="submit"
             disabled={loading || coins < COST}
-            className="w-full mt-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm tracking-widest uppercase border border-gray-600 hover:border-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm tracking-widest uppercase rounded-lg font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
             {loading ? '构筑中...' : '支付并创造'}
           </button>

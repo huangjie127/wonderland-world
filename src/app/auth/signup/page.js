@@ -88,20 +88,20 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg border border-gray-200 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">创建账户</h1>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-white/50 shadow-xl w-full max-w-md relative z-10">
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800 font-serif">创建账户</h1>
         <p className="text-center text-gray-600 mb-8">加入 Persona Archive</p>
 
         {showOtpInput ? (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
              {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              <div className="bg-red-50/80 border border-red-200 text-red-600 px-4 py-3 rounded">
                 {error}
               </div>
             )}
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+              <div className="bg-green-50/80 border border-green-200 text-green-600 px-4 py-3 rounded">
                 {success}
               </div>
             )}
@@ -113,7 +113,7 @@ export default function SignupPage() {
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="请输入邮件中的6位数字"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest text-lg"
+                className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-center tracking-widest text-lg"
               />
               <p className="text-xs text-gray-500 mt-2">
                 请查看您的邮箱 {email}，找到验证邮件中的数字验证码。
@@ -124,7 +124,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+              className="w-full bg-indigo-600/90 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? "验证中..." : "完成验证"}
             </button>
@@ -132,12 +132,12 @@ export default function SignupPage() {
         ) : (
           <form onSubmit={handleSignup} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              <div className="bg-red-50/80 border border-red-200 text-red-600 px-4 py-3 rounded">
                 {error}
               </div>
             )}
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+              <div className="bg-green-50/80 border border-green-200 text-green-600 px-4 py-3 rounded">
                 {success}
               </div>
             )}
@@ -150,7 +150,7 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
 
@@ -162,7 +162,7 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="至少6位"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
 
@@ -174,21 +174,21 @@ export default function SignupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+              className="w-full bg-indigo-600/90 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? "发送验证码" : "注册"}
             </button>
           </form>
         )}
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200/50">
           <p className="text-center text-gray-600 text-sm">
             已有账户？{" "}
             <Link href="/auth/login" className="text-indigo-600 hover:text-indigo-700 font-semibold">

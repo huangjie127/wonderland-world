@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import ParticleBackground from '@/components/meet/ParticleBackground';
+
 
 export default function MeetRoom() {
   const { id: roomId } = useParams();
@@ -163,20 +163,13 @@ export default function MeetRoom() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-gray-300 font-serif relative overflow-hidden flex flex-col md:flex-row">
-      <ParticleBackground />
+    <div className="min-h-screen relative overflow-hidden flex flex-col md:flex-row">
       
-      {/* Ambient Background Effects */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-900/5 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-900/5 rounded-full blur-[100px]"></div>
-      </div>
-
       {/* Mobile Header / Toggle */}
       <div className="md:hidden fixed top-4 left-4 z-50">
         <button 
           onClick={() => setShowSidebar(!showSidebar)}
-          className="p-2 bg-[#0f1016]/90 border border-gray-700 rounded-lg text-gray-300 shadow-lg backdrop-blur-md"
+          className="p-2 bg-white/80 border border-white/50 rounded-lg text-gray-600 shadow-lg backdrop-blur-md"
         >
           {showSidebar ? '✕' : '☰ 菜单'}
         </button>
@@ -185,61 +178,61 @@ export default function MeetRoom() {
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
-          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/20 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setShowSidebar(false)}
         />
       )}
 
       {/* Left Sidebar: World Info & Guide */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-[#0f1016]/95 backdrop-blur-xl border-r border-gray-800/50 flex flex-col transition-transform duration-300 ease-in-out
-        md:relative md:translate-x-0 md:bg-[#0f1016]/80 md:backdrop-blur-md
+        fixed inset-y-0 left-0 z-50 w-80 bg-white/80 backdrop-blur-xl border-r border-white/50 flex flex-col transition-transform duration-300 ease-in-out shadow-xl
+        md:relative md:translate-x-0 md:bg-white/40 md:backdrop-blur-md md:shadow-none
         ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6 border-b border-gray-800/50 pt-16 md:pt-6">
-          <h2 className="text-xl font-light text-gray-100 mb-2 tracking-widest">{room.title}</h2>
-          <div className="flex items-center gap-2 text-red-400/80 text-sm font-mono mb-4">
+        <div className="p-6 border-b border-white/50 pt-16 md:pt-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-2 tracking-wide font-serif">{room.title}</h2>
+          <div className="flex items-center gap-2 text-red-500/80 text-sm font-mono mb-4">
             <span className="animate-pulse">●</span>
             <span>坍塌倒计时: {timeLeft}</span>
           </div>
-          <p className="text-sm text-gray-500 leading-relaxed italic border-l-2 border-gray-700 pl-3">
+          <p className="text-sm text-gray-600 leading-relaxed italic border-l-2 border-indigo-200 pl-3 font-serif">
             {room.scene_description}
           </p>
         </div>
 
         {/* Guide / Tips Section */}
         <div className="p-6 flex-1 overflow-y-auto">
-          <div className="bg-[#1a1b26]/50 border border-gray-800 rounded p-4 mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">行动指南</h3>
-            <ul className="space-y-3 text-sm text-gray-500">
+          <div className="bg-white/50 border border-white/60 rounded-xl p-4 mb-6 shadow-sm">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">行动指南</h3>
+            <ul className="space-y-3 text-sm text-gray-600">
               <li className="flex gap-2">
-                <span className="text-blue-500">♦</span>
-                <span><strong className="text-gray-400">扮演:</strong> 沉浸在你的角色中，用它的语气说话。</span>
+                <span className="text-indigo-500">♦</span>
+                <span><strong className="text-gray-700">扮演:</strong> 沉浸在你的角色中，用它的语气说话。</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-purple-500">♦</span>
-                <span><strong className="text-gray-400">互动:</strong> 观察其他灵魂，对他们的行为做出反应。</span>
+                <span><strong className="text-gray-700">互动:</strong> 观察其他灵魂，对他们的行为做出反应。</span>
               </li>
               <li className="flex gap-2">
-                <span className="text-gray-500">♦</span>
-                <span><strong className="text-gray-400">探索:</strong> 使用"行动"描述你在场景中的动作。</span>
+                <span className="text-gray-400">♦</span>
+                <span><strong className="text-gray-700">探索:</strong> 使用"行动"描述你在场景中的动作。</span>
               </li>
             </ul>
           </div>
 
           <div className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">在线灵魂 ({participants.length})</h3>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">在线灵魂 ({participants.length})</h3>
             <div className="grid grid-cols-4 gap-2">
               {participants.map(p => (
                 <div key={p.id} className="group relative" title={p.name}>
-                  <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 overflow-hidden group-hover:border-blue-500 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-white border border-white/60 overflow-hidden group-hover:border-indigo-400 transition-colors shadow-sm">
                     {p.avatar_url ? (
                       <img src={p.avatar_url} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">{p.name[0]}</div>
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">{p.name[0]}</div>
                     )}
                   </div>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-xs text-gray-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
                     {p.name}
                   </div>
                 </div>
@@ -248,21 +241,21 @@ export default function MeetRoom() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-800/50 bg-[#0a0b10]/50">
+        <div className="p-4 border-t border-white/50 bg-white/30">
           {myCharacter && (
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-600 overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-white border border-white/60 overflow-hidden shadow-sm">
                 {myCharacter.avatar_url ? <img src={myCharacter.avatar_url} className="w-full h-full object-cover" /> : null}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-gray-300 truncate">{myCharacter.name}</div>
-                <div className="text-xs text-gray-600">当前化身</div>
+                <div className="text-sm text-gray-800 font-medium truncate">{myCharacter.name}</div>
+                <div className="text-xs text-gray-500">当前化身</div>
               </div>
             </div>
           )}
           <button 
             onClick={handleLeave}
-            className="w-full py-2 border border-red-900/30 text-red-500/70 text-xs tracking-widest hover:bg-red-900/10 hover:text-red-400 transition-colors uppercase"
+            className="w-full py-2 border border-red-200 text-red-500/80 text-xs tracking-widest hover:bg-red-50 hover:text-red-600 transition-colors uppercase rounded-lg font-medium"
           >
             离开位面
           </button>
@@ -270,40 +263,40 @@ export default function MeetRoom() {
       </div>
 
       {/* Main Stage: Chat & Interaction */}
-      <div className="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-transparent to-[#0a0b10]/80 h-[100dvh] md:h-auto">
+      <div className="flex-1 flex flex-col relative z-10 h-[100dvh] md:h-auto">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent pt-16 md:pt-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pt-16 md:pt-8">
           {messages.map((msg, idx) => {
             const isMe = msg.character_id === myCharacter?.id;
             return (
               <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : ''} group animate-in fade-in slide-in-from-bottom-2 duration-500`}>
                 {/* Avatar */}
                 <div className="flex-shrink-0 mt-1">
-                  <div className={`w-10 h-10 rounded-full border ${isMe ? 'border-blue-900/50' : 'border-gray-700'} bg-[#1a1b26] overflow-hidden shadow-lg`}>
+                  <div className={`w-10 h-10 rounded-full border ${isMe ? 'border-indigo-200' : 'border-white'} bg-white overflow-hidden shadow-md`}>
                     {msg.characters?.avatar_url ? (
                       <img src={msg.characters.avatar_url} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">{msg.characters?.name?.[0]}</div>
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">{msg.characters?.name?.[0]}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
-                  <span className="text-xs text-gray-600 mb-1 px-1">{msg.characters?.name}</span>
+                <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
+                  <span className="text-xs text-gray-500 mb-1 px-1">{msg.characters?.name}</span>
                   
                   {msg.type === 'chat' ? (
-                    <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-lg backdrop-blur-sm
+                    <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm backdrop-blur-sm
                       ${isMe 
-                        ? 'bg-blue-900/20 border border-blue-800/30 text-gray-200 rounded-tr-sm' 
-                        : 'bg-[#1a1b26]/80 border border-gray-700/50 text-gray-300 rounded-tl-sm'
+                        ? 'bg-indigo-600/90 text-white rounded-tr-sm shadow-indigo-200' 
+                        : 'bg-white/80 border border-white/60 text-gray-700 rounded-tl-sm shadow-gray-200'
                       }
                     `}>
                       {msg.content}
                     </div>
                   ) : (
-                    <div className="px-5 py-3 rounded-lg bg-gray-800/30 border border-gray-700/30 text-gray-400 text-sm italic flex items-center gap-2">
-                      <span className="text-yellow-500/50">✨</span>
+                    <div className="px-5 py-3 rounded-lg bg-white/40 border border-white/50 text-gray-600 text-sm italic flex items-center gap-2 shadow-sm">
+                      <span className="text-yellow-500">✨</span>
                       <span>{msg.content}</span>
                     </div>
                   )}
@@ -315,13 +308,13 @@ export default function MeetRoom() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 md:p-6 bg-[#0f1016]/90 border-t border-gray-800/50 backdrop-blur-md pb-safe">
+        <div className="p-4 md:p-6 bg-white/60 border-t border-white/50 backdrop-blur-md pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
           <div className="max-w-4xl mx-auto flex flex-col gap-3">
             {/* Chat Input */}
             <div className="flex gap-2 md:gap-3">
               <input 
                 type="text" 
-                className="flex-1 bg-[#1a1b26] border border-gray-700 rounded px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-200 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all"
+                className="flex-1 bg-white/80 border border-white/60 rounded-lg px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-800 placeholder-gray-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 outline-none transition-all shadow-sm"
                 placeholder="说点什么..."
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
@@ -329,7 +322,7 @@ export default function MeetRoom() {
               />
               <button 
                 onClick={() => handleSend('chat')}
-                className="px-4 md:px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded transition-colors uppercase text-xs tracking-widest whitespace-nowrap"
+                className="px-4 md:px-6 bg-indigo-600 hover:bg-indigo-700 text-white border border-transparent rounded-lg transition-all uppercase text-xs tracking-widest whitespace-nowrap font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5"
               >
                 发送
               </button>
@@ -338,10 +331,10 @@ export default function MeetRoom() {
             {/* Action Input */}
             <div className="flex gap-2 md:gap-3">
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] md:text-xs uppercase tracking-wider">行动 |</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] md:text-xs uppercase tracking-wider font-medium">行动 |</span>
                 <input 
                   type="text" 
-                  className="w-full bg-[#1a1b26]/50 border border-gray-800 rounded px-3 py-2 pl-12 md:pl-16 text-xs md:text-sm text-gray-400 placeholder-gray-700 focus:border-gray-600 outline-none transition-all italic"
+                  className="w-full bg-white/50 border border-white/60 rounded-lg px-3 py-2 pl-12 md:pl-16 text-xs md:text-sm text-gray-600 placeholder-gray-400 focus:border-gray-300 outline-none transition-all italic shadow-sm"
                   placeholder="描述动作..."
                   value={actionInput}
                   onChange={e => setActionInput(e.target.value)}
@@ -350,7 +343,7 @@ export default function MeetRoom() {
               </div>
               <button 
                 onClick={() => handleSend('action')}
-                className="px-4 md:px-6 bg-transparent hover:bg-gray-800 text-gray-500 border border-gray-800 rounded transition-colors uppercase text-xs tracking-widest whitespace-nowrap"
+                className="px-4 md:px-6 bg-transparent hover:bg-white/50 text-gray-500 border border-gray-300 rounded-lg transition-colors uppercase text-xs tracking-widest whitespace-nowrap font-medium"
               >
                 执行
               </button>

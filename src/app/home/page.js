@@ -151,9 +151,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] md:h-screen bg-gray-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="flex h-[calc(100vh-64px)] md:h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* 左侧导航栏 */}
-      <div className={`${mobileView === 'detail' ? 'hidden md:flex' : 'flex'} w-full md:w-auto flex-col h-full`}>
+      <div className={`${mobileView === 'detail' ? 'hidden md:flex' : 'flex'} w-full md:w-auto flex-col h-full md:p-4 md:pr-0`}>
         <CharacterSidebar
             characters={characters}
             selectedCharacterId={selectedCharacterId}
@@ -171,7 +171,7 @@ export default function HomePage() {
       </div>
 
       {/* 右侧内容区 */}
-      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 h-full overflow-hidden`}>
+      <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 h-full overflow-hidden md:p-4`}>
         <CharacterDetail 
             character={selectedCharacter} 
             onCharacterUpdated={handleCharacterUpdated}

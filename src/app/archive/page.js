@@ -73,20 +73,21 @@ export default function ArchivePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen relative">
+    <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
       {/* 所有角色部分 */}
       <section>
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <h2 className="text-3xl font-bold text-gray-800">社区角色库</h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h2 className="text-3xl font-bold text-gray-800 font-serif tracking-wide">社区角色库</h2>
             
             {/* Search Bar */}
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full md:w-72">
                 <input
                     type="text"
                     placeholder="搜索角色名..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white/60 backdrop-blur-sm border border-white/50 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 shadow-sm transition-all"
                 />
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +98,7 @@ export default function ArchivePage() {
         </div>
 
         {characters.length === 0 && !loading && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50">
                 {searchQuery ? `没有找到名为 "${searchQuery}" 的角色` : "暂无角色"}
             </div>
         )}
@@ -109,30 +110,32 @@ export default function ArchivePage() {
               href={`/archive/${char.id}`}
               className="group cursor-pointer"
             >
-              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow h-full flex flex-col">
-                <div className="aspect-square bg-gray-200 overflow-hidden">
+              <div className="bg-white/70 backdrop-blur-md border border-white/60 rounded-xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+                <div className="aspect-square bg-gray-100/50 overflow-hidden relative">
                   {char.avatar_url ? (
                     <img
                       src={char.avatar_url}
                       alt={char.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
-                      <span className="text-gray-600 text-4xl">👤</span>
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                      <span className="text-gray-400 text-4xl">👤</span>
                     </div>
                   )}
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-                <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="text-lg font-bold text-gray-800 line-clamp-1 mb-1">
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="text-lg font-bold text-gray-800 line-clamp-1 mb-2 font-serif tracking-wide">
                     {char.name}
                   </h3>
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-3 flex-1">
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1 leading-relaxed">
                     {char.tagline || "暂无简介"}
                   </p>
-                  <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-3 border-t border-gray-100/50">
                     <span>作者: {char.user_id?.substring(0, 6)}...</span>
-                    <span className="text-indigo-500 font-medium group-hover:translate-x-1 transition-transform">
+                    <span className="text-indigo-500/80 font-medium group-hover:translate-x-1 transition-transform">
                       查看主页 →
                     </span>
                   </div>
@@ -144,10 +147,10 @@ export default function ArchivePage() {
 
         {/* Load More Button */}
         {hasMore && !loading && characters.length > 0 && (
-          <div className="mt-8 text-center">
+          <div className="mt-12 text-center">
             <button
               onClick={handleLoadMore}
-              className="px-6 py-2 bg-white border border-gray-300 rounded-full text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition shadow-sm font-medium"
+              className="px-8 py-2.5 bg-white/60 backdrop-blur-sm border border-white/50 rounded-full text-gray-600 hover:bg-white/80 hover:text-indigo-600 transition shadow-sm font-medium tracking-wide"
             >
               加载更多
             </button>
@@ -160,16 +163,17 @@ export default function ArchivePage() {
       </section>
 
       {characters.length === 0 && !loading && !searchQuery && (
-        <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-          <p className="text-gray-500 text-lg mb-4">还没有任何角色收录</p>
+        <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50">
+          <p className="text-gray-500 text-lg mb-4 font-serif">还没有任何角色收录</p>
           <Link
             href="/home"
-            className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition shadow-md"
+            className="inline-block bg-indigo-600/90 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition shadow-md"
           >
             去创建第一个角色
           </Link>
         </div>
       )}
+    </div>
     </div>
   );
 }

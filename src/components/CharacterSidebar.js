@@ -29,19 +29,19 @@ export default function CharacterSidebar({
   );
 
   return (
-    <div className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className="w-full md:w-72 bg-white/80 backdrop-blur-md border-r md:border border-white/50 flex flex-col h-full md:rounded-xl md:shadow-sm overflow-hidden">
       {/* 头部 - 创建按钮和通知 */}
-      <div className="p-4 border-b border-gray-200 space-y-3">
+      <div className="p-4 border-b border-gray-200/50 space-y-3">
         <button
           onClick={onCreateNew}
-          className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition"
+          className="w-full bg-indigo-600/90 text-white py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-sm font-medium"
         >
           + 创建新角色
         </button>
 
         <button
           onClick={handleOpenMailbox}
-          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 font-semibold text-sm transition flex items-center justify-center gap-2 relative"
+          className="w-full bg-white/60 border border-white/50 text-gray-700 py-2.5 rounded-lg hover:bg-white/80 font-medium transition flex items-center justify-center gap-2 relative shadow-sm"
         >
           <span>📬</span> 信箱
           {unreadMsgCount > 0 && (
@@ -58,7 +58,7 @@ export default function CharacterSidebar({
         {pendingCount > 0 && onShowNotifications && (
           <button
             onClick={onShowNotifications}
-            className="w-full relative bg-amber-100 text-amber-800 py-2 rounded-lg hover:bg-amber-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+            className="w-full relative bg-amber-100/80 text-amber-800 py-2 rounded-lg hover:bg-amber-200/80 font-semibold text-sm transition flex items-center justify-center gap-2"
           >
             🔔 收到 {pendingCount} 个关系请求
           </button>
@@ -68,7 +68,7 @@ export default function CharacterSidebar({
         {terminationCount > 0 && onShowTerminations && (
           <button
             onClick={onShowTerminations}
-            className="w-full relative bg-red-100 text-red-800 py-2 rounded-lg hover:bg-red-200 font-semibold text-sm transition flex items-center justify-center gap-2"
+            className="w-full relative bg-red-100/80 text-red-800 py-2 rounded-lg hover:bg-red-200/80 font-semibold text-sm transition flex items-center justify-center gap-2"
           >
             🔓 收到 {terminationCount} 个解除请求
           </button>
@@ -77,13 +77,13 @@ export default function CharacterSidebar({
 
       {/* 搜索框 */}
       {characters.length > 3 && (
-        <div className="p-3 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200/50">
           <input
             type="text"
             placeholder="搜索角色..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 bg-white/60 border border-gray-200/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           />
         </div>
       )}
@@ -96,14 +96,14 @@ export default function CharacterSidebar({
               <button
                 key={character.id}
                 onClick={() => onSelectCharacter(character.id)}
-                className={`w-full flex items-center gap-3 p-3 transition-colors border-l-2 ${
+                className={`w-full flex items-center gap-3 p-3 transition-all rounded-lg border ${
                   selectedCharacterId === character.id
-                    ? "bg-indigo-50 border-indigo-600"
-                    : "border-transparent hover:bg-gray-50"
+                    ? "bg-indigo-50/80 border-indigo-200 shadow-sm"
+                    : "border-transparent hover:bg-white/50"
                 }`}
               >
                 {/* 头像 */}
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 border border-white/50">
                   {character.avatar_url ? (
                     <img
                       src={character.avatar_url}
@@ -138,7 +138,7 @@ export default function CharacterSidebar({
 
       {/* 底部统计 */}
       {characters.length > 0 && (
-        <div className="p-3 border-t border-gray-200 text-xs text-gray-600">
+        <div className="p-3 border-t border-gray-200/50 text-xs text-gray-600 bg-white/30">
           <p>共 {characters.length} 个角色</p>
         </div>
       )}

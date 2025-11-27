@@ -282,10 +282,10 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
   // 编辑模式
   if (isEditing) {
     return (
-      <div className="flex-1 bg-white overflow-y-auto p-6">
+      <div className="flex-1 bg-white/90 backdrop-blur-sm overflow-y-auto p-6 rounded-xl shadow-sm">
         <div className="max-w-2xl">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">编辑角色信息</h2>
+            <h2 className="text-2xl font-bold font-serif text-gray-800">编辑角色信息</h2>
             <button
               onClick={() => setIsEditing(false)}
               className="text-gray-600 hover:text-gray-800 text-2xl"
@@ -419,13 +419,13 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
   // 查看模式
   return (
-    <div className="flex-1 bg-white overflow-y-auto pb-20 md:pb-0">
+    <div className="flex-1 bg-white/80 backdrop-blur-md overflow-y-auto pb-20 md:pb-0 rounded-xl shadow-sm border border-white/50">
       {/* 头部 - 角色信息 */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 relative">
+      <div className="bg-gradient-to-r from-pink-100/80 via-purple-100/80 to-indigo-100/80 text-gray-800 p-6 relative">
         {/* Mobile Back Button */}
         <button 
             onClick={onBack}
-            className="md:hidden absolute top-4 left-4 text-white p-2 hover:bg-white/20 rounded-full z-10"
+            className="md:hidden absolute top-4 left-4 text-gray-600 p-2 hover:bg-white/40 rounded-full z-10"
         >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -434,7 +434,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-start pt-8 md:pt-0">
           {/* 头像 */}
-          <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 border-4 border-white/30 shadow-lg">
+          <div className="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0 border-4 border-white/50 shadow-lg">
             {character.avatar_url ? (
               <img
                 src={character.avatar_url}
@@ -442,7 +442,7 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-400 text-2xl">
+              <div className="w-full h-full flex items-center justify-center bg-white/50 text-2xl">
                 👤
               </div>
             )}
@@ -450,9 +450,9 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
 
           {/* 基本信息 */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-bold mb-2">{character.name}</h1>
-            <p className="text-lg opacity-90 mb-4">{character.tagline || "无标语"}</p>
-            <p className="text-sm opacity-75">
+            <h1 className="text-3xl font-bold font-serif mb-2 text-gray-900">{character.name}</h1>
+            <p className="text-lg text-gray-700 mb-4 font-serif italic">{character.tagline || "无标语"}</p>
+            <p className="text-sm text-gray-500">
               创建于 {new Date(character.created_at).toLocaleDateString("zh-CN")}
             </p>
           </div>
@@ -748,13 +748,13 @@ export default function CharacterDetail({ character, onCharacterUpdated, onChara
             />
           </div>
         ) : (
-          <div className="bg-gray-50 rounded-lg p-12 text-center border border-dashed border-gray-300">
+          <div className="bg-white/50 backdrop-blur-sm rounded-xl p-12 text-center border border-white/60 shadow-sm">
             <div className="text-4xl mb-3">🕸️</div>
-            <p className="text-gray-500 font-medium mb-2">登录后查看角色关系图谱</p>
-            <p className="text-sm text-gray-400 mb-4">探索角色之间错综复杂的羁绊</p>
+            <p className="text-gray-600 font-medium mb-2">登录后查看角色关系图谱</p>
+            <p className="text-sm text-gray-500 mb-4">探索角色之间错综复杂的羁绊</p>
             <Link 
               href="/auth/login" 
-              className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="inline-block px-6 py-2 bg-indigo-600/90 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-sm"
             >
               立即登录
             </Link>

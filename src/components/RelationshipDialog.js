@@ -118,8 +118,8 @@ export default function RelationshipDialog({
   const selectedCharName = myCharacters.find((c) => c.id === selectedCharacterId)?.name;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl max-w-md w-full mx-4 p-6 border border-white/50">
         {/* 关闭按钮 */}
         <button
           onClick={resetDialog}
@@ -128,7 +128,7 @@ export default function RelationshipDialog({
           ✕
         </button>
 
-        <h2 className="text-2xl font-bold mb-4">与 {targetCharacterName} 建立关系</h2>
+        <h2 className="text-2xl font-bold font-serif mb-4 text-gray-800">与 {targetCharacterName} 建立关系</h2>
 
         {/* Step 1: 选择发起者角色 */}
         {step === 1 && (
@@ -140,9 +140,9 @@ export default function RelationshipDialog({
                   <button
                     key={char.id}
                     onClick={() => handleCharacterSelect(char.id)}
-                    className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition flex items-center gap-3"
+                    className="w-full p-3 text-left border border-white/60 bg-white/50 rounded-lg hover:bg-indigo-50/80 transition flex items-center gap-3 shadow-sm"
                   >
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-white/50">
                       {char.avatar_url ? (
                         <img
                           src={char.avatar_url}
@@ -155,7 +155,7 @@ export default function RelationshipDialog({
                         </div>
                       )}
                     </div>
-                    <span className="font-semibold">{char.name}</span>
+                    <span className="font-semibold text-gray-800">{char.name}</span>
                   </button>
                 ))}
               </div>
@@ -187,16 +187,16 @@ export default function RelationshipDialog({
                   setCategory(key);
                   setStep(3);
                 }}
-                className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition"
+                className="w-full p-3 text-left border border-white/60 bg-white/50 rounded-lg hover:bg-indigo-50/80 transition shadow-sm"
               >
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-800">
                   {key === "family"
                     ? "👨‍👩‍👧‍👦 亲缘关系"
                     : key === "romance"
                     ? "💕 爱情关系"
                     : "🤝 社会关系"}
                 </span>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   {relationships.length} 种预设关系
                 </p>
               </button>
@@ -207,7 +207,7 @@ export default function RelationshipDialog({
                 setCategory(null);
                 setStep(3);
               }}
-              className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition font-semibold text-gray-700"
+              className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50/50 transition font-semibold text-gray-600"
             >
               + 自定义关系
             </button>
@@ -224,14 +224,14 @@ export default function RelationshipDialog({
               ← 返回分类
             </button>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {PRESET_RELATIONSHIPS[category].map((rel, idx) => (
                 <button
                   key={idx}
                   onClick={() => handlePresetSelect(rel)}
-                  className="w-full p-3 text-left border border-gray-300 rounded-lg hover:bg-indigo-50 transition"
+                  className="w-full p-3 text-left border border-white/60 bg-white/50 rounded-lg hover:bg-indigo-50/80 transition shadow-sm"
                 >
-                  <p className="font-semibold">
+                  <p className="font-semibold text-gray-800">
                     {selectedCharName}是{rel.from} → {targetCharacterName}是{rel.to}
                   </p>
                 </button>
@@ -243,7 +243,7 @@ export default function RelationshipDialog({
                 setCategory(null);
                 setStep(3);
               }}
-              className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition font-semibold text-gray-700 mt-4"
+              className="w-full p-3 text-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50/50 transition font-semibold text-gray-600 mt-4"
             >
               + 自定义关系
             </button>
@@ -269,7 +269,7 @@ export default function RelationshipDialog({
                 value={customFromRole}
                 onChange={(e) => setCustomFromRole(e.target.value)}
                 placeholder="例如：父亲、朋友、老板"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80"
               />
             </div>
 
@@ -282,13 +282,13 @@ export default function RelationshipDialog({
                 value={customToRole}
                 onChange={(e) => setCustomToRole(e.target.value)}
                 placeholder="例如：儿子、朋友、员工"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80"
               />
             </div>
 
             <button
               onClick={handleCustomSubmit}
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold transition"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold transition shadow-sm"
             >
               下一步
             </button>
@@ -298,19 +298,19 @@ export default function RelationshipDialog({
         {/* Step 4: 确认 */}
         {step === 4 && (
           <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-white/50 p-4 rounded-lg border border-white/60 shadow-inner">
               <div className="text-center space-y-3">
                 <p className="text-sm text-gray-600">{selectedCharName}的身份：</p>
-                <p className="text-lg font-bold text-indigo-600">{fromRole}</p>
+                <p className="text-lg font-bold text-indigo-600 font-serif">{fromRole}</p>
 
                 <div className="flex items-center gap-2 justify-center text-gray-400">
-                  <div className="flex-1 border-t"></div>
+                  <div className="flex-1 border-t border-gray-300"></div>
                   <span>↔</span>
-                  <div className="flex-1 border-t"></div>
+                  <div className="flex-1 border-t border-gray-300"></div>
                 </div>
 
                 <p className="text-sm text-gray-600">{targetCharacterName}的身份：</p>
-                <p className="text-lg font-bold text-indigo-600">{toRole}</p>
+                <p className="text-lg font-bold text-indigo-600 font-serif">{toRole}</p>
               </div>
             </div>
 
@@ -323,13 +323,13 @@ export default function RelationshipDialog({
             <div className="flex gap-3">
               <button
                 onClick={() => setStep(3)}
-                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 font-semibold transition"
+                className="flex-1 bg-gray-200/80 text-gray-800 py-2 rounded-lg hover:bg-gray-300/80 font-semibold transition"
               >
                 修改
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold transition"
+                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold transition shadow-sm"
               >
                 {isTargetOwner ? "建立关系" : "发起申请"}
               </button>

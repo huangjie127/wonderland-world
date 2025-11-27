@@ -37,14 +37,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg border border-gray-200 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">Persona Archive</h1>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-white/50 shadow-xl w-full max-w-md relative z-10">
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800 font-serif">Persona Archive</h1>
         <p className="text-center text-gray-600 mb-8">多角色档案管理系统</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+            <div className="bg-red-50/80 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
             </div>
           )}
@@ -57,7 +57,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
             />
           </div>
 
@@ -69,20 +69,20 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+            className="w-full bg-indigo-600/90 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? "登录中..." : "登录"}
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200/50">
           <p className="text-center text-gray-600 text-sm">
             还没有账户？{" "}
             <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-700 font-semibold">

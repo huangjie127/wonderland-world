@@ -20,7 +20,7 @@
 }
 
 body {
-  background: var(--background);
+  /* background: var(--background);  Removed to allow layout gradient to show */
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

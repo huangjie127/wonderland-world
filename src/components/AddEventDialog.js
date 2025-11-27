@@ -56,12 +56,12 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-100 flex flex-col animate-scale-in">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/50 flex flex-col animate-scale-in">
         <div className="p-6">
           {/* 头部 */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">📝 添加事件</h2>
+            <h2 className="text-2xl font-bold font-serif text-gray-800">📝 添加事件</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl transition-colors"
@@ -80,10 +80,10 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
                 <button
                   key={type.value}
                   onClick={() => setEventType(type.value)}
-                  className={`p-3 rounded-lg border-2 transition text-sm font-semibold ${
+                  className={`p-3 rounded-lg border transition text-sm font-semibold ${
                     eventType === type.value
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-gray-200 hover:border-indigo-300"
+                      ? "border-indigo-600 bg-indigo-50/80 text-indigo-700"
+                      : "border-white/60 bg-white/50 hover:border-indigo-300 hover:bg-white/80"
                   }`}
                 >
                   {type.label}
@@ -102,7 +102,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="如果不填，将自动截取内容前10个字"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80"
             />
           </div>
 
@@ -117,7 +117,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
               placeholder="描述发生了什么...（最多 500 字）"
               maxLength={500}
               rows={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white/80"
             />
             <p className="text-xs text-gray-500 mt-1">
               {content.length}/500
@@ -139,7 +139,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex gap-3 pt-2 border-t border-gray-100">
+          <div className="flex gap-3 pt-2 border-t border-gray-200/50">
             <button
               onClick={handleSubmit}
               disabled={saving}
@@ -149,7 +149,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
             </button>
             <button
               onClick={onClose}
-              className="flex-1 bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-50 font-semibold transition shadow-sm btn-feedback"
+              className="flex-1 bg-white/80 border border-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-white font-semibold transition shadow-sm btn-feedback"
             >
               取消
             </button>

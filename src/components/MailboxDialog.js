@@ -66,16 +66,16 @@ export default function MailboxDialog({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border border-white/50">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="p-4 border-b border-white/50 flex justify-between items-center bg-white/50">
+          <h3 className="text-lg font-bold font-serif text-gray-800 flex items-center gap-2">
             <span>📬</span> 信箱
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200"
+            className="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/50"
           >
             ✕
           </button>
@@ -91,12 +91,12 @@ export default function MailboxDialog({ isOpen, onClose }) {
               <p>暂时没有新消息</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100/50">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 transition-colors ${
-                    !notification.is_read ? "bg-blue-50/50" : ""
+                  className={`p-4 hover:bg-white/50 transition-colors ${
+                    !notification.is_read ? "bg-indigo-50/30" : ""
                   }`}
                 >
                   <div className="flex gap-3">
@@ -122,7 +122,7 @@ export default function MailboxDialog({ isOpen, onClose }) {
         </div>
         
         {/* Footer */}
-        <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
+        <div className="p-3 border-t border-white/50 bg-white/30 text-center">
           <button 
             onClick={fetchNotifications}
             className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
