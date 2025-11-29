@@ -7,6 +7,14 @@ import TextToSVG from "text-to-svg";
 
 import path from "path";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
