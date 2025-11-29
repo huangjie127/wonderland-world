@@ -142,9 +142,19 @@ export async function POST(request) {
     });
 
   } catch (error) {
+    let reason = "";
+    if (error.message?.includes("Input buffer contains unsupported image format")) {
+      reason = "图片格式不支持（如HEIC/RAW/GIF等），请转换为JPG或PNG后再上传。";
+    } else if (error.message?.includes("Expected JPEG, PNG, WebP, AVIF, TIFF or GIF input")) {
+      reason = "图片格式不支持，仅支持JPG、PNG、WebP、AVIF、TIFF、GIF。";
+    } else if (error.message?.includes("File too large")) {
+      reason = "图片文件过大，建议压缩后再上传。";
+    } else if (error.message?.includes("Server configuration error")) {
+      reason = "服务器配置错误，请联系管理员。";
+    }
     console.error("Error processing/uploading image:", error);
     return NextResponse.json(
-      { error: "Failed to process/upload image: " + error.message },
+      { error: reason ? reason + "\n" + error.message : "Failed to process/upload image: " + error.message },
       { status: 500 }
     );
   }
