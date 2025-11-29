@@ -77,9 +77,9 @@ export default function CreateRoomDialog({ isOpen, onClose, characterId, onSucce
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white/90 backdrop-blur-md border border-white/60 rounded-2xl max-w-md w-full p-8 shadow-2xl relative">
-        <button 
+        <button  
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
         >

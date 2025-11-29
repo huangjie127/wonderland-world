@@ -238,7 +238,7 @@ export default function AlbumDetailPage() {
             <h2 className="text-xl font-bold mb-4">上传新照片</h2>
 
             {/* 拖拽上传 */}
-            <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition">
+            <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition relative">
               <div className="text-4xl mb-3">📷</div>
               <p className="text-gray-700 font-semibold mb-1">点击或拖拽上传照片</p>
               <p className="text-sm text-gray-500">支持多张上传，推荐尺寸 1200x800px</p>
@@ -247,7 +247,7 @@ export default function AlbumDetailPage() {
                 multiple
                 accept="image/*"
                 onChange={handleFileSelect}
-                className="hidden"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
             </label>
 

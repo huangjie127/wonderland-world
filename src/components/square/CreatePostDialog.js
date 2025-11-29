@@ -115,7 +115,7 @@ export default function CreatePostDialog({ isOpen, onClose, user, characters, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white w-full h-full md:h-auto md:max-w-2xl md:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 md:fade-in md:zoom-in duration-200">
         
         {/* Header */}

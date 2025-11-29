@@ -56,7 +56,7 @@ export default function AddEventDialog({ isOpen, onClose, characterId, onEventAd
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
       <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/50 flex flex-col animate-scale-in">
         <div className="p-6">
           {/* 头部 */}
