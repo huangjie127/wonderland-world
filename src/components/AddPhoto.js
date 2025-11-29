@@ -68,7 +68,14 @@ export default function AddPhoto({ characterId }) {
       window.location.reload();
     } catch (error) {
       console.error("Error:", error);
-      alert("添加失败：" + error.message);
+      let extraInfo = "";
+      if (file) {
+        extraInfo = `\n图片格式: ${file.type || file.name || "未知"}`;
+        if (file.size) {
+          extraInfo += `\n图片大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+        }
+      }
+      alert(`图片上传格式有误${extraInfo}\n${error.message}`);
     } finally {
       setLoading(false);
     }
